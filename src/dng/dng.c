@@ -963,6 +963,22 @@ dngObject_t * initDngObject(mlvObject_t * mlv_data, int raw_state, double fps, i
 }
 
 /* save DNG file */
+uint8_t* getDngFrameBuffer(mlvObject_t * mlv_data, dngObject_t * dng_data, uint32_t frame_index)
+{
+    /* get filled dng_data struct */
+    if(dng_get_frame(mlv_data, dng_data, frame_index) != 0)
+    {
+        return NULL;
+    }
+
+    uint8_t* dng_buffer = (uint8_t*)malloc(dng_data->header_size + dng_data->image_size);
+    memcpy(dng_buffer, dng_data->header_buf, dng_data->header_size);
+    memcpy(dng_buffer + dng_data->header_size, dng_data->image_buf, dng_data->image_size);
+
+    return dng_buffer;
+}
+
+/* save DNG file */
 int saveDngFrame(mlvObject_t * mlv_data, dngObject_t * dng_data, uint32_t frame_index, char * dng_filename)
 {
     FILE* dngf = fopen(dng_filename, "wb");

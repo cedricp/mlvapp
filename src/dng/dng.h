@@ -58,6 +58,7 @@ int dng_decompress_image(uint16_t * output_buffer, uint16_t * input_buffer, size
 /* routines to initialize, save and free DNG exporting struct */
 dngObject_t * initDngObject(mlvObject_t * mlv_data, int raw_state, double fps, int32_t par[4]);
 int saveDngFrame(mlvObject_t * mlv_data, dngObject_t * dng_data, uint32_t frame_index, char * dng_filename);
+uint8_t* getDngFrameBuffer(mlvObject_t * mlv_data, dngObject_t * dng_data, uint32_t frame_index);
 void freeDngObject(dngObject_t * dng_data);
 
 #endif

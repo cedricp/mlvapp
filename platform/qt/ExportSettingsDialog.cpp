@@ -260,13 +260,17 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
     }
     else if( index == CODEC_CDNG
           || index == CODEC_CDNG_LOSSLESS
-          || index == CODEC_CDNG_FAST )
+          || index == CODEC_CDNG_FAST)
     {
         ui->labelDebayer->setEnabled( false );
         ui->comboBoxDebayer->setEnabled( false );
         ui->comboBoxOption->setEnabled( true );
         ui->comboBoxOption->addItem( QString( "Default Naming Scheme" ) );
         ui->comboBoxOption->addItem( QString( "DaVinci Resolve Naming Scheme" ) );
+        enableResize = false;
+    }
+    else if(index == CODEC_EXR)
+    {
         enableResize = false;
     }
     else if( index == CODEC_H264

@@ -86,6 +86,7 @@ win32{
 linux-g++*{
     QMAKE_CFLAGS += -O3 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -std=c99
     QMAKE_CXXFLAGS += -fopenmp
+    INCLUDEPATH += /usr/local/include/rawtoaces/include /usr/local/include/rawtoaces/lib
     LIBS += -lgomp
 }
 

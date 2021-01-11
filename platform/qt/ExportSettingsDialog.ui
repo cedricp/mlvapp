@@ -274,6 +274,11 @@
             <string>WAV (Audio Only)</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>ACES2065-4 (EXR)</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item row="1" column="1">

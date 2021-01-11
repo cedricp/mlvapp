@@ -484,6 +484,7 @@ private:
     void writeSettings( void );
     void startExportPipe( QString fileName );
     void startExportCdng( QString fileName );
+    void startExportEXR( QString fileName );
     void startExportMlv( QString fileName );
     void startExportAVFoundation( QString fileName );
     void addFileToSession( QString fileName );

@@ -49,6 +49,7 @@
 #include "BadPixelFileHandler.h"
 #include "FocusPixelMapManager.h"
 #include "StatusFpmDialog.h"
+#include <acesrender.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -190,6 +191,9 @@ MainWindow::MainWindow(int &argc, char **argv, QWidget *parent) :
     //ui->comboBoxProcessingGamut->setVisible( false );
     ui->label_TonemappingFunction->setVisible( false );
     ui->comboBoxTonemapFct->setVisible( false );
+
+    AcesRender & render = AcesRender::getInstance();
+    render.initialize ( pathsFinder() );
 }
 
 //Destructor
@@ -2549,6 +2553,180 @@ void MainWindow::startExportPipe(QString fileName)
 
     //If we don't like amaze we switch it off again
     if( !ui->actionAlwaysUseAMaZE->isChecked() ) setMlvDontAlwaysUseAmaze( m_pMlvObject );
+
+    //Enable GUI drawing
+    m_dontDraw = false;
+
+    //Emit Ready-Signal
+    emit exportReady();
+}
+
+void MainWindow::startExportEXR(QString fileName)
+{
+    //Disable GUI drawing
+    m_dontDraw = true;
+
+    // we always get amaze frames for exporting
+    setMlvAlwaysUseAmaze( m_pMlvObject );
+    llrpResetFpmStatus(m_pMlvObject);
+    llrpResetBpmStatus(m_pMlvObject);
+    llrpComputeStripesOn(m_pMlvObject);
+    m_pMlvObject->current_cached_frame_active = 0;
+    //enable low level raw fixes (if wanted)
+    if( ui->checkBoxRawFixEnable->isChecked() ) m_pMlvObject->llrawproc->fix_raw = 1;
+
+    //StatusDialog
+    m_pStatusDialog->ui->progressBar->setMaximum( m_exportQueue.first()->cutOut() - m_exportQueue.first()->cutIn() + 1 );
+    m_pStatusDialog->ui->progressBar->setValue( 0 );
+    m_pStatusDialog->open();
+    //Frames in the export queue?!
+    int totalFrames = 0;
+    for( int i = 0; i < m_exportQueue.count(); i++ )
+    {
+        totalFrames += m_exportQueue.at(i)->cutOut() - m_exportQueue.at(i)->cutIn() + 1;
+    }
+
+    //Create folders and build name schemes
+    QString pathName = QFileInfo( fileName ).path();
+    fileName = QFileInfo( fileName ).fileName();
+    fileName = fileName.left( fileName.indexOf( '.' ) );
+
+    if( m_codecOption == CODEC_CNDG_DEFAULT ) pathName = pathName.append( "/%1" ).arg( fileName );
+    else pathName = pathName.append( "/%1_1_%2-%3-%4_0001_C0000" )
+            .arg( fileName )
+            .arg( getMlvTmYear( m_pMlvObject ), 2, 10, QChar('0') )
+            .arg( getMlvTmMonth( m_pMlvObject ), 2, 10, QChar('0') )
+            .arg( getMlvTmDay( m_pMlvObject ), 2, 10, QChar('0') );
+
+    //qDebug() << pathName << fileName;
+    //Create folder
+    QDir dir;
+    dir.mkpath( pathName );
+
+    //Output WAVE
+    if( doesMlvHaveAudio( m_pMlvObject ) && m_audioExportEnabled )
+    {
+        QString wavFileName = pathName;
+        if( m_codecOption == CODEC_CNDG_DEFAULT ) wavFileName = wavFileName.append( "/%1.wav" ).arg( fileName );
+        else wavFileName = wavFileName.append( "/%1_1_%2-%3-%4_0001_C0000.wav" )
+            .arg( fileName )
+            .arg( getMlvTmYear( m_pMlvObject ), 2, 10, QChar('0') )
+            .arg( getMlvTmMonth( m_pMlvObject ), 2, 10, QChar('0') )
+            .arg( getMlvTmDay( m_pMlvObject ), 2, 10, QChar('0') );
+        //qDebug() << wavFileName;
+#ifdef Q_OS_UNIX
+        writeMlvAudioToWaveCut( m_pMlvObject, wavFileName.toUtf8().data(), m_exportQueue.first()->cutIn(), m_exportQueue.first()->cutOut() );
+#else
+        writeMlvAudioToWaveCut( m_pMlvObject, wavFileName.toLatin1().data(), m_exportQueue.first()->cutIn(), m_exportQueue.first()->cutOut() );
+#endif
+    }
+
+    //Set aspect ratio of the picture
+    int32_t picAR[4] = { 0 };
+    //Set horizontal stretch
+    if( m_exportQueue.first()->stretchFactorX() == STRETCH_H_133 )
+    {
+        picAR[0] = 4; picAR[1] = 3;
+    }
+    else if( m_exportQueue.first()->stretchFactorX() == STRETCH_H_150 )
+    {
+        picAR[0] = 3; picAR[1] = 2;
+    }
+    else if( m_exportQueue.first()->stretchFactorX() == STRETCH_H_175 )
+    {
+        picAR[0] = 7; picAR[1] = 4;
+    }
+    else if( m_exportQueue.first()->stretchFactorX() == STRETCH_H_180 )
+    {
+        picAR[0] = 9; picAR[1] = 5;
+    }
+    else if( m_exportQueue.first()->stretchFactorX() == STRETCH_H_200 )
+    {
+        picAR[0] = 2; picAR[1] = 1;
+    }
+    else
+    {
+        picAR[0] = 1; picAR[1] = 1;
+    }
+    //Set vertical stretch
+    if(m_exportQueue.first()->stretchFactorY() == STRETCH_V_167)
+    {
+        picAR[2] = 5; picAR[3] = 3;
+    }
+    else if(m_exportQueue.first()->stretchFactorY() == STRETCH_V_300)
+    {
+        picAR[2] = 3; picAR[3] = 1;
+    }
+    else if(m_exportQueue.first()->stretchFactorY() == STRETCH_V_033)
+    {
+        picAR[2] = 1; picAR[3] = 1; picAR[0] *= 3; //Upscale only
+    }
+    else
+    {
+        picAR[2] = 1; picAR[3] = 1;
+    }
+
+    //Init DNG data struct
+    dngObject_t * cinemaDng = initDngObject( m_pMlvObject, m_codecProfile - 6, getFramerate(), picAR);
+
+    //Output frames loop
+    for( uint32_t frame = m_exportQueue.first()->cutIn() - 1; frame < m_exportQueue.first()->cutOut(); frame++ )
+    {
+        QString dngName;
+        if( m_codecOption == CODEC_CNDG_DEFAULT ) dngName = dngName.append( "%1_%2.dng" )
+                                                                                .arg( fileName )
+                                                                                .arg( getMlvFrameNumber( m_pMlvObject, frame ), 6, 10, QChar('0') );
+        else dngName = dngName.append( "%1_1_%2-%3-%4_0001_C0000_%5.dng" )
+            .arg( fileName )
+            .arg( getMlvTmYear( m_pMlvObject ), 2, 10, QChar('0') )
+            .arg( getMlvTmMonth( m_pMlvObject ), 2, 10, QChar('0') )
+            .arg( getMlvTmDay( m_pMlvObject ), 2, 10, QChar('0') )
+            .arg( getMlvFrameNumber( m_pMlvObject, frame ), 6, 10, QChar('0') );
+
+        QString filePathNr = pathName;
+        filePathNr = filePathNr.append( "/" + dngName );
+
+        //Save ACES EXR frame
+        uint8_t* dng_buffer = getDngFrameBuffer(m_pMlvObject, cinemaDng, frame);
+
+        if (dng_buffer == NULL)
+        {
+            m_pStatusDialog->close();
+            qApp->processEvents();
+            int ret = QMessageBox::critical( this,
+                                             tr( "MLV App - Export file error" ),
+                                             tr( "Could not save: %1\nHow do you like to proceed?" ).arg( dngName ),
+                                             tr( "Skip frame" ),
+                                             tr( "Abort current export" ),
+                                             tr( "Abort batch export" ),
+                                             0, 2 );
+            if( ret == 2 )
+            {
+                exportAbort();
+            }
+            if( ret > 0 )
+            {
+                break;
+            }
+        }
+
+#ifdef Q_OS_UNIX
+
+#else
+
+#endif
+        //Set Status
+        m_pStatusDialog->ui->progressBar->setValue( frame - ( m_exportQueue.first()->cutIn() - 1 ) + 1 );
+        m_pStatusDialog->ui->progressBar->repaint();
+        m_pStatusDialog->drawTimeFromToDoFrames( totalFrames - frame + ( m_exportQueue.first()->cutIn() - 1 ) - 1 );
+        qApp->processEvents();
+
+        //Abort pressed? -> End the loop
+        if( m_exportAbortPressed ) break;
+    }
+
+    //Free DNG data struct
+    freeDngObject( cinemaDng );
 
     //Enable GUI drawing
     m_dontDraw = false;
@@ -7848,6 +8026,11 @@ void MainWindow::exportHandler( void )
             startExportAVFoundation( m_exportQueue.first()->exportFileName() );
         }
 #endif
+        else if( m_codecProfile == CODEC_EXR )
+        {
+            //raw output
+            startExportEXR( m_exportQueue.first()->exportFileName() );
+        }
         else if( m_codecProfile == CODEC_MLV )
         {
             //MLV output
