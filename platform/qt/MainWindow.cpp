@@ -49,7 +49,7 @@
 #include "BadPixelFileHandler.h"
 #include "FocusPixelMapManager.h"
 #include "StatusFpmDialog.h"
-#include <acesrender.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,6 +61,8 @@ extern const char* camidGetCameraName(uint32_t cameraModel, int camname_type);
 #ifdef __cplusplus
 }
 #endif
+
+#include "../../src/rawtoaces.h"
 
 #define APPNAME "MLV App"
 #define VERSION QString("%1.%2").arg(VERSION_MAJOR).arg(VERSION_MINOR)
@@ -193,7 +195,16 @@ MainWindow::MainWindow(int &argc, char **argv, QWidget *parent) :
     ui->comboBoxTonemapFct->setVisible( false );
 
     AcesRender & render = AcesRender::getInstance();
-    render.initialize ( pathsFinder() );
+
+    render.initialize();
+    render.gatherSupportedCameras();
+    render.gatherSupportedIllums();
+
+    if( !render.fetchIlluminant( ) ) {
+        fprintf( stderr, "\nError: No matching light source. "
+                         "Please find available options by "
+                         "\"rawtoaces --valid-illum\".\n");
+    }
 }
 
 //Destructor
@@ -2666,17 +2677,22 @@ void MainWindow::startExportEXR(QString fileName)
         picAR[2] = 1; picAR[3] = 1;
     }
 
+    AcesRender& Aces_render = AcesRender::getInstance();
+    Option& options = Aces_render.getSettings();
+    options.mat_method = matMethod2;
+    options.wb_method = wbMethod0;
+
     //Init DNG data struct
     dngObject_t * cinemaDng = initDngObject( m_pMlvObject, m_codecProfile - 6, getFramerate(), picAR);
 
     //Output frames loop
     for( uint32_t frame = m_exportQueue.first()->cutIn() - 1; frame < m_exportQueue.first()->cutOut(); frame++ )
     {
-        QString dngName;
-        if( m_codecOption == CODEC_CNDG_DEFAULT ) dngName = dngName.append( "%1_%2.dng" )
+        QString exrName;
+        if( m_codecOption == CODEC_CNDG_DEFAULT ) exrName = exrName.append( "%1_%2.exr" )
                                                                                 .arg( fileName )
                                                                                 .arg( getMlvFrameNumber( m_pMlvObject, frame ), 6, 10, QChar('0') );
-        else dngName = dngName.append( "%1_1_%2-%3-%4_0001_C0000_%5.dng" )
+        else exrName = exrName.append( "%1_1_%2-%3-%4_0001_C0000_%5.exr" )
             .arg( fileName )
             .arg( getMlvTmYear( m_pMlvObject ), 2, 10, QChar('0') )
             .arg( getMlvTmMonth( m_pMlvObject ), 2, 10, QChar('0') )
@@ -2684,18 +2700,23 @@ void MainWindow::startExportEXR(QString fileName)
             .arg( getMlvFrameNumber( m_pMlvObject, frame ), 6, 10, QChar('0') );
 
         QString filePathNr = pathName;
-        filePathNr = filePathNr.append( "/" + dngName );
+        filePathNr = filePathNr.append( "/" + exrName );
 
-        //Save ACES EXR frame
+
         uint8_t* dng_buffer = getDngFrameBuffer(m_pMlvObject, cinemaDng, frame);
 
-        if (dng_buffer == NULL)
+        bool ok = dng_buffer != NULL;
+        if (ok){
+            ok = Aces_render.preprocessRawBuffer((char*)dng_buffer, cinemaDng->image_size + cinemaDng->header_size) == 0;
+        }
+
+        if (!ok)
         {
             m_pStatusDialog->close();
             qApp->processEvents();
             int ret = QMessageBox::critical( this,
                                              tr( "MLV App - Export file error" ),
-                                             tr( "Could not save: %1\nHow do you like to proceed?" ).arg( dngName ),
+                                             tr( "Could not save: %1\nHow do you like to proceed?" ).arg( exrName ),
                                              tr( "Skip frame" ),
                                              tr( "Abort current export" ),
                                              tr( "Abort batch export" ),
@@ -2708,13 +2729,22 @@ void MainWindow::startExportEXR(QString fileName)
             {
                 break;
             }
+        } else {
+
+            Aces_render.postprocessRaw ();
+
+            //Save ACES EXR frame
+#ifdef Q_OS_UNIX
+            Aces_render.outputACES(filePathNr.toUtf8().data());
+#else
+            Aces_render.outputACES(filePathNr.toLatin1().data());
+#endif
         }
 
-#ifdef Q_OS_UNIX
+        if (dng_buffer){
+            free(dng_buffer);
+        }
 
-#else
-
-#endif
         //Set Status
         m_pStatusDialog->ui->progressBar->setValue( frame - ( m_exportQueue.first()->cutIn() - 1 ) + 1 );
         m_pStatusDialog->ui->progressBar->repaint();

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>569</width>
-    <height>469</height>
+    <width>693</width>
+    <height>654</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -152,7 +152,98 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="1">
+        <item row="5" column="2">
+         <widget class="QComboBox" name="comboBoxIlluminant"/>
+        </item>
+        <item row="2" column="2">
+         <widget class="QComboBox" name="comboBoxDebayer">
+          <item>
+           <property name="text">
+            <string>Force Bilinear</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Force AMaZE</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Force LMMSE</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Force IGV</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Receipt configuration</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="labelWhiteBalance">
+          <property name="text">
+           <string>White balance mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QComboBox" name="comboBoxMatrixMode">
+          <item>
+           <property name="text">
+            <string>Use file metadata</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>User specified illuminant</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Image average</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Average grey box</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Use custom</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="labelMatrixMode">
+          <property name="text">
+           <string>Matrix mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QComboBox" name="comboBoxOption"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Codec</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
          <widget class="QComboBox" name="comboBoxCodec">
           <item>
            <property name="text">
@@ -281,51 +372,6 @@
           </item>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="comboBoxOption"/>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Codec</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QComboBox" name="comboBoxDebayer">
-          <item>
-           <property name="text">
-            <string>Force Bilinear</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Force AMaZE</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Force LMMSE</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Force IGV</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Receipt configuration</string>
-           </property>
-          </item>
-         </widget>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="labelDebayer">
           <property name="text">
@@ -342,6 +388,45 @@
            <bool>false</bool>
           </property>
          </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QComboBox" name="comboBoxWhiteBalance">
+          <property name="currentIndex">
+           <number>2</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>Calculate from camera spec sens</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Use file metadata</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Use Adobe coeffs (LibRaw)</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="labelIlluminant">
+          <property name="text">
+           <string>User defined illuminant</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Supported cameras</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="2">
+         <widget class="QComboBox" name="comboBoxCamera"/>
         </item>
        </layout>
       </item>

@@ -87,7 +87,7 @@ linux-g++*{
     QMAKE_CFLAGS += -O3 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -std=c99
     QMAKE_CXXFLAGS += -fopenmp
     INCLUDEPATH += /usr/local/include/rawtoaces/include /usr/local/include/rawtoaces/lib
-    LIBS += -lgomp
+    LIBS += -lgomp -lrawtoaces_util.0.1.0
 }
 
 ##############
@@ -221,6 +221,7 @@ HEADERS += MainWindow.h \
     ../../src/processing/cube_lut.h \
     ../../src/processing/denoiser/denoiser_2d_median.h \
     ../../src/processing/bmd_film.h \
+    ../../src/rawtoaces.h \
     ClipInformation.h \
     InfoDialog.h \
     MyApplication.h \

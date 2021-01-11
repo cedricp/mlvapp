@@ -15,6 +15,8 @@
 #include <QDataStream>
 #include <QDebug>
 
+#include "../../src/rawtoaces.h"
+
 //From here for Preset Saving
 struct ExportPreset {
     QString name;
@@ -229,6 +231,9 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
     ui->label_Info->clear();
     ui->label_Info->setToolTip( "" );
 
+    ui->comboBoxCamera->setEnabled(false);
+    ui->comboBoxIlluminant->setEnabled(false);
+
     if( index <= CODEC_PRORES4444 )
     {
         ui->labelDebayer->setEnabled( true );
@@ -248,6 +253,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
             QStandardItem* item = model->item(1);
             item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
         }
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if( index == CODEC_AVI )
     {
@@ -257,6 +266,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "YUV420 8bit" ) );
         ui->comboBoxOption->addItem( QString( "V210 10bit" ) );
         ui->comboBoxOption->addItem( QString( "BGR24 8bit" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if( index == CODEC_CDNG
           || index == CODEC_CDNG_LOSSLESS
@@ -268,9 +281,33 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "Default Naming Scheme" ) );
         ui->comboBoxOption->addItem( QString( "DaVinci Resolve Naming Scheme" ) );
         enableResize = false;
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if(index == CODEC_EXR)
     {
+        std::vector<std::string> supported_illuminants = AcesRender::getInstance().getSupportedIllums();
+        std::vector<std::string> supported_cameras = AcesRender::getInstance().getSupportedCameras();
+        ui->labelDebayer->setEnabled( false );
+        ui->comboBoxDebayer->setEnabled( false );
+        ui->comboBoxOption->setEnabled( true );
+        ui->comboBoxOption->addItem( QString( "Default Naming Scheme" ) );
+        ui->comboBoxOption->addItem( QString( "DaVinci Resolve Naming Scheme" ) );
+        ui->comboBoxMatrixMode->setEnabled(true);
+        ui->comboBoxWhiteBalance->setEnabled(true);
+        ui->labelMatrixMode->setEnabled(true);
+        ui->labelWhiteBalance->setEnabled(true);
+        ui->comboBoxIlluminant->setEnabled(true);
+        ui->comboBoxCamera->setEnabled(true);
+
+        for (auto& illum : supported_illuminants){
+            ui->comboBoxIlluminant->addItem(QString::fromStdString(illum));
+        }
+        for (auto& camera : supported_cameras){
+            ui->comboBoxCamera->addItem(QString::fromStdString(camera));
+        }
         enableResize = false;
     }
     else if( index == CODEC_H264
@@ -287,6 +324,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "ffmpeg Movie (*.mov) Medium Quality" ) );
         ui->comboBoxOption->addItem( QString( "ffmpeg MPEG-4 (*.mp4) Medium Quality" ) );
         ui->comboBoxOption->addItem( QString( "ffmpeg Matroska (*.mkv) Medium Quality" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
 #ifdef Q_OS_MACX
         if( index == CODEC_H264 )
         {
@@ -307,6 +348,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->setEnabled( true );
         ui->comboBoxOption->addItem( QString( "Sequence" ) );
         ui->comboBoxOption->addItem( QString( "Averaged Frame (max. 128 frames)" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if( index == CODEC_PNG )
     {
@@ -315,6 +360,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->setEnabled( true );
         ui->comboBoxOption->addItem( QString( "16 bit" ) );
         ui->comboBoxOption->addItem( QString( "8 bit" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if( index == CODEC_JPG2K )
     {
@@ -323,6 +372,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->setEnabled( true );
         ui->comboBoxOption->addItem( QString( "Sequence (*.jp2)" ) );
         ui->comboBoxOption->addItem( QString( "Movie (*.mov)" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if( index == CODEC_FFVHUFF )
     {
@@ -333,6 +386,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "12bit YUV 4:4:4" ) );
         ui->comboBoxOption->addItem( QString( "16bit YUV 4:4:4" ) );
         ui->comboBoxOption->setCurrentIndex( 2 );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if( index == CODEC_MLV )
     {
@@ -344,6 +401,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "Decompress" ) );
         ui->comboBoxOption->addItem( QString( "Averaged Frame" ) );
         ui->comboBoxOption->addItem( QString( "Extract Internal Darkframe" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
         enableResize = false;
     }
     else if( index == CODEC_DNXHD )
@@ -355,6 +416,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "1080p 8bit" ) );
         ui->comboBoxOption->addItem( QString( "720p 10bit" ) );
         ui->comboBoxOption->addItem( QString( "720p 8bit" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
         enableResize = false;
         QPixmap pic = QPixmap( ":/RetinaIMG/RetinaIMG/Status-dialog-warning-icon.png" ).scaled( 24 * devicePixelRatio(), 24 * devicePixelRatio() );
         pic.setDevicePixelRatio( devicePixelRatio() );
@@ -371,6 +436,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "HQ 1080p 8bit" ) );
         ui->comboBoxOption->addItem( QString( "SQ 1080p 8bit" ) );
         ui->comboBoxOption->addItem( QString( "LB 1080p 8bit" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
         enableResize = false;
         QPixmap pic = QPixmap( ":/RetinaIMG/RetinaIMG/Status-dialog-warning-icon.png" ).scaled( 24 * devicePixelRatio(), 24 * devicePixelRatio() );
         pic.setDevicePixelRatio( devicePixelRatio() );
@@ -395,6 +464,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->addItem( QString( "Medium" ) );
         ui->comboBoxOption->addItem( QString( "Low+" ) );
         ui->comboBoxOption->addItem( QString( "Low" ) );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
     else if( index == CODEC_AUDIO_ONLY )
     {
@@ -403,6 +476,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->comboBoxOption->setEnabled( false );
         ui->checkBoxExportAudio->setEnabled( false );
         ui->checkBoxExportAudio->setChecked( true );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
         enableResize = false;
     }
     else
@@ -410,6 +487,10 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         ui->labelDebayer->setEnabled( true );
         ui->comboBoxDebayer->setEnabled( true );
         ui->comboBoxOption->setEnabled( false );
+        ui->comboBoxMatrixMode->setEnabled(false);
+        ui->comboBoxWhiteBalance->setEnabled(false);
+        ui->labelMatrixMode->setEnabled(false);
+        ui->labelWhiteBalance->setEnabled(false);
     }
 
     //If CDNG / MLV, disable resize feature
