@@ -129,7 +129,9 @@ public:
                                   bool exportAudio = true,
                                   bool heightLocked = false,
                                   uint8_t smooth = 0,
-                                  bool hdrBlending = false);
+                                  bool hdrBlending = false,
+                                  uint16_t whiteBalMeth = 2,
+                                  uint16_t matrixMeth = 0);
     ~ExportSettingsDialog();
     uint8_t encoderSetting(void);
     uint8_t encoderOption(void);
@@ -143,6 +145,8 @@ public:
     bool isHeightLocked(void);
     uint8_t smoothSetting(void);
     bool hdrBlending(void);
+    uint16_t matrixMethod(void);
+    uint16_t whiteBalanceMethod(void);
 
 private slots:
     void on_pushButtonClose_clicked();

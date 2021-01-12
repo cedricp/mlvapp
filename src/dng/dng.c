@@ -962,7 +962,7 @@ dngObject_t * initDngObject(mlvObject_t * mlv_data, int raw_state, double fps, i
     return dng_data;
 }
 
-/* save DNG file */
+/* get DNG file buffer */
 uint8_t* getDngFrameBuffer(mlvObject_t * mlv_data, dngObject_t * dng_data, uint32_t frame_index)
 {
     /* get filled dng_data struct */

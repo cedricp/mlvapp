@@ -2679,8 +2679,8 @@ void MainWindow::startExportEXR(QString fileName)
 
     AcesRender& Aces_render = AcesRender::getInstance();
     Option& options = Aces_render.getSettings();
-    options.mat_method = matMethod2;
-    options.wb_method = wbMethod0;
+    options.mat_method = (matMethods_t)m_matrixMethod;
+    options.wb_method = (wbMethods_t)m_whiteBalanceMethod;
 
     //Init DNG data struct
     dngObject_t * cinemaDng = initDngObject( m_pMlvObject, m_codecProfile - 6, getFramerate(), picAR);
@@ -2730,15 +2730,15 @@ void MainWindow::startExportEXR(QString fileName)
                 break;
             }
         } else {
-
-            Aces_render.postprocessRaw ();
-
+            if (Aces_render.postprocessRaw () == 0)
+            {
             //Save ACES EXR frame
 #ifdef Q_OS_UNIX
-            Aces_render.outputACES(filePathNr.toUtf8().data());
+                Aces_render.outputACES(filePathNr.toUtf8().data());
 #else
-            Aces_render.outputACES(filePathNr.toLatin1().data());
+                Aces_render.outputACES(filePathNr.toLatin1().data());
 #endif
+            }
         }
 
         if (dng_buffer){
@@ -7032,7 +7032,9 @@ void MainWindow::on_actionExportSettings_triggered()
                                                                       m_audioExportEnabled,
                                                                       m_resizeFilterHeightLocked,
                                                                       m_smoothFilterSetting,
-                                                                      m_hdrExport );
+                                                                      m_hdrExport,
+                                                                      m_whiteBalanceMethod,
+                                                                      m_matrixMethod);
     pExportSettings->exec();
     m_codecProfile = pExportSettings->encoderSetting();
     m_codecOption = pExportSettings->encoderOption();
@@ -7046,6 +7048,9 @@ void MainWindow::on_actionExportSettings_triggered()
     m_resizeFilterHeightLocked = pExportSettings->isHeightLocked();
     m_smoothFilterSetting = pExportSettings->smoothSetting();
     m_hdrExport = pExportSettings->hdrBlending();
+    m_whiteBalanceMethod = pExportSettings->whiteBalanceMethod();
+    m_matrixMethod = pExportSettings->matrixMethod();
+
     delete pExportSettings;
 
     if( m_fileLoaded )

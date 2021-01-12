@@ -454,6 +454,8 @@ private:
     bool m_tryToSyncAudio;
     bool m_audioExportEnabled;
     bool m_hdrExport;
+    uint16_t m_whiteBalanceMethod;
+    uint16_t m_matrixMethod;
     bool m_exportAbortPressed;
     bool m_zoomTo100Center;
     bool m_zoomModeChanged;
