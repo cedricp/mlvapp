@@ -4845,7 +4845,7 @@ void MainWindow::replaceReceipt(ReceiptSettings *receiptTarget, ReceiptSettings 
 
     if( paste && cdui->checkBoxDebayer->isChecked() )          receiptTarget->setDebayer( receiptSource->debayer() );
 
-    if( paste )
+    if( paste && cdui->checkBoxToning->isChecked() )
     {
         receiptTarget->setTone( receiptSource->tone() );
         receiptTarget->setToningStrength( receiptSource->toningStrength() );
