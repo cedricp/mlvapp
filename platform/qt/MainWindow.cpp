@@ -973,6 +973,14 @@ int MainWindow::openMlv( QString fileName )
     {
         setMlvUseIgvDebayer( m_pMlvObject );
     }
+    else if( ui->actionUseRcdDebayer->isChecked() )
+    {
+        setMlvUseRcdDebayer( m_pMlvObject );
+    }
+    else if( ui->actionUseDcbDebayer->isChecked() )
+    {
+        setMlvUseDcbDebayer( m_pMlvObject );
+    }
     else
     {
         setMlvDontAlwaysUseAmaze( m_pMlvObject );
@@ -1129,6 +1137,7 @@ void MainWindow::initGui( void )
     m_previewDebayerGroup->addAction( ui->actionUseIgvDebayer );
     m_previewDebayerGroup->addAction( ui->actionUseAhdDebayer );
     m_previewDebayerGroup->addAction( ui->actionUseRcdDebayer );
+    m_previewDebayerGroup->addAction( ui->actionUseDcbDebayer );
     m_previewDebayerGroup->addAction( ui->actionAlwaysUseAMaZE );
     m_previewDebayerGroup->addAction( ui->actionCaching );
     m_previewDebayerGroup->addAction( ui->actionDontSwitchDebayerForPlayback );
@@ -6995,6 +7004,13 @@ void MainWindow::on_actionUseRcdDebayer_triggered()
     return;
 }
 
+//Use DCB debayer
+void MainWindow::on_actionUseDcbDebayer_triggered()
+{
+    selectDebayerAlgorithm();
+    return;
+}
+
 //Use AMaZE or not
 void MainWindow::on_actionAlwaysUseAMaZE_triggered()
 {
@@ -9989,6 +10005,9 @@ void MainWindow::selectDebayerAlgorithm()
         case ReceiptSettings::RCD:
             setMlvUseRcdDebayer( m_pMlvObject );
             break;
+        case ReceiptSettings::DCB:
+            setMlvUseDcbDebayer( m_pMlvObject );
+            break;
         default:
             break;
         }
@@ -10039,6 +10058,12 @@ void MainWindow::selectDebayerAlgorithm()
             setMlvUseRcdDebayer( m_pMlvObject );
             disableMlvCaching( m_pMlvObject );
             m_pChosenDebayer->setText( tr( "RCD" ) );
+        }
+        else if( ui->actionUseDcbDebayer->isChecked() )
+        {
+            setMlvUseDcbDebayer( m_pMlvObject );
+            disableMlvCaching( m_pMlvObject );
+            m_pChosenDebayer->setText( tr( "DCB" ) );
         }
         else if( ui->actionAlwaysUseAMaZE->isChecked() )
         {
