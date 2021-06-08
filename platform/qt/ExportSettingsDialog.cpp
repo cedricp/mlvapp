@@ -303,8 +303,8 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
     }
     else if(index == CODEC_EXR)
     {
-        std::vector<std::string> supported_illuminants = AcesRender::getInstance().getSupportedIllums();
-        std::vector<std::string> supported_cameras = AcesRender::getInstance().getSupportedCameras();
+        std::vector<std::string> supported_illuminants;// = AcesRender::getInstance().getSupportedIllums();
+        std::vector<std::string> supported_cameras;// = AcesRender::getInstance().getSupportedCameras();
         ui->labelDebayer->setEnabled( false );
         ui->comboBoxDebayer->setEnabled( false );
         ui->comboBoxOption->setEnabled( true );
