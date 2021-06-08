@@ -2679,8 +2679,10 @@ void MainWindow::startExportEXR(QString fileName)
 
     AcesRender& Aces_render = AcesRender::getInstance();
     Option& options = Aces_render.getSettings();
-    options.mat_method = (matMethods_t)m_matrixMethod;
-    options.wb_method = (wbMethods_t)m_whiteBalanceMethod;
+    options.mat_method = (matMethods_t)1;//(matMethods_t)m_matrixMethod;
+    options.wb_method = (wbMethods_t)0;//(wbMethods_t)m_whiteBalanceMethod;
+    options.scale = 1.;
+    options.highlight = 2;
 
     //Init DNG data struct
     dngObject_t * cinemaDng = initDngObject( m_pMlvObject, m_codecProfile - 6, getFramerate(), picAR);
