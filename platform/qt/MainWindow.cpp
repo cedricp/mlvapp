@@ -8,6 +8,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "math.h"
+#include <utility>
 
 #include <QMessageBox>
 #include <QThread>
@@ -269,7 +270,7 @@ void MainWindow::timerFrameEvent( void )
     {
         m_countTimeDown = 3; //3 secs
         int cores = QThread::idealThreadCount();
-        if( cores > 1 ) cores -= 1; // -1 for the processing
+        //if( cores > 1 ) cores -= 1; // -1 for the processing
         setMlvCpuCores( m_pMlvObject, cores );
     }
 
@@ -973,6 +974,14 @@ int MainWindow::openMlv( QString fileName )
     {
         setMlvUseIgvDebayer( m_pMlvObject );
     }
+    else if( ui->actionUseRcdDebayer->isChecked() )
+    {
+        setMlvUseRcdDebayer( m_pMlvObject );
+    }
+    else if( ui->actionUseDcbDebayer->isChecked() )
+    {
+        setMlvUseDcbDebayer( m_pMlvObject );
+    }
     else
     {
         setMlvDontAlwaysUseAmaze( m_pMlvObject );
@@ -1128,6 +1137,8 @@ void MainWindow::initGui( void )
     m_previewDebayerGroup->addAction( ui->actionUseLmmseDebayer );
     m_previewDebayerGroup->addAction( ui->actionUseIgvDebayer );
     m_previewDebayerGroup->addAction( ui->actionUseAhdDebayer );
+    m_previewDebayerGroup->addAction( ui->actionUseRcdDebayer );
+    m_previewDebayerGroup->addAction( ui->actionUseDcbDebayer );
     m_previewDebayerGroup->addAction( ui->actionAlwaysUseAMaZE );
     m_previewDebayerGroup->addAction( ui->actionCaching );
     m_previewDebayerGroup->addAction( ui->actionDontSwitchDebayerForPlayback );
@@ -1640,6 +1651,25 @@ void MainWindow::writeSettings()
 //Start Export via Pipe
 void MainWindow::startExportPipe(QString fileName)
 {
+    //ffmpeg existing?
+    {
+#if defined __linux__ && !defined APP_IMAGE
+        QFile *file = new QFile( "ffmpeg" );
+#elif __WIN32__
+        QFile *file = new QFile( "ffmpeg.exe" );
+#else
+        QFile *file = new QFile( "ffmpeg" );
+#endif
+        if( !file->exists() )
+        {
+            QMessageBox::critical( this, APPNAME, tr( "Encoder ffmpeg missing in application path." ) );
+            exportAbort();
+            //Emit Ready-Signal
+            emit exportReady();
+            return;
+        }
+    }
+
     //Disable GUI drawing
     m_dontDraw = true;
 
@@ -2282,7 +2312,7 @@ void MainWindow::startExportPipe(QString fileName)
         else
             quality = 24;
 
-        program.append( QString( " -r %1 -y -f rawvideo -s %2 -pix_fmt rgb48 -i - -c:v libx265 -preset medium -crf %3 -pix_fmt %4 -color_primaries bt709 -color_trc bt709 -colorspace bt709 %5\"%6\"" )
+        program.append( QString( " -r %1 -y -f rawvideo -s %2 -pix_fmt rgb48 -i - -c:v libx265 -preset medium -crf %3 -tag:v hvc1 -pix_fmt %4 -color_primaries bt709 -color_trc bt709 -colorspace bt709 %5\"%6\"" )
                     .arg( fps )
                     .arg( resolution )
                     .arg( quality )
@@ -2290,52 +2320,65 @@ void MainWindow::startExportPipe(QString fileName)
                     .arg( resizeFilter )
                     .arg( output ) );
     }
-    else if( m_codecProfile == CODEC_DNXHD
-          || m_codecProfile == CODEC_DNXHR )
+    else if( m_codecProfile == CODEC_DNXHR )
     {
-        output.append( QString( ".avi" ) );
+        output.append( QString( ".mov" ) );
+
+        QString option;
+        QString format;
+
+        switch( m_codecOption )
+        {
+        case CODEC_DNXHR_444_1080p_10bit:
+            format = "-pix_fmt yuv444p10";
+            option = "-profile:v dnxhr_444 ";
+            break;
+        case CODEC_DNXHR_HQX_1080p_10bit:
+            format = "-pix_fmt yuv422p10";
+            option = "-profile:v dnxhr_hqx ";
+            break;
+        case CODEC_DNXHR_HQ_1080p_8bit:
+            format = "-pix_fmt yuv422p";
+            option = "-profile:v dnxhr_hq ";
+            break;
+        case CODEC_DNXHR_SQ_1080p_8bit:
+            format = "-pix_fmt yuv422p";
+            option = "-profile:v dnxhr_sq ";
+            break;
+        case CODEC_DNXHR_LB_1080p_8bit:
+        default:
+            format = "-pix_fmt yuv422p";
+            option = "-profile:v dnxhr_lb ";
+            break;
+        }
+
+        QString optionFps = "";
+        if( fps == QString( "23.976" ) || fps == QString( "23,976" ) || getFramerate() == 24000.0/1001.0 ) optionFps = ",fps=24000/1001";
+        else if( fps == QString( "29.97" ) || fps == QString( "29,97" ) || getFramerate() == 30000.0/1001.0 ) optionFps = ",fps=30000/1001";
+        else if( fps == QString( "59.94" ) || fps == QString( "59,94" ) || getFramerate() == 60000.0/1001.0 ) optionFps = ",fps=60000/1001";
+        resizeFilter.insert( resizeFilter.indexOf( "=bt709" )+6, optionFps );
+
+        program.append( QString( " -r %1 -y -f rawvideo -s %2 -pix_fmt rgb48 -i - -c:v dnxhd %3%4 -color_primaries bt709 -color_trc bt709 -colorspace bt709 %5\"%6\"" )
+                    .arg( fps )
+                    .arg( resolution )
+                    .arg( option )
+                    .arg( format )
+                    .arg( resizeFilter )
+                    .arg( output ) );
+    }
+    else if( m_codecProfile == CODEC_DNXHD )
+    {
+        output.append( QString( ".mov" ) );
 
         QString option;
         QString option2;
         QString format;
-
-        if( m_codecProfile == CODEC_DNXHD )
-        {
-            format = "format=yuv422p10";
-            option2 = "";
-        }
-        else
-        {
-            switch( m_codecOption )
-            {
-            case CODEC_DNXHR_444_1080p_10bit:
-                format = "format=yuv444p10";
-                option2 = "-profile:v dnxhr_444 ";
-                break;
-            case CODEC_DNXHR_HQX_1080p_10bit:
-                format = "format=yuv422p10";
-                option2 = "-profile:v dnxhr_hqx ";
-                break;
-            case CODEC_DNXHR_HQ_1080p_8bit:
-                format = "format=yuv422p";
-                option2 = "-profile:v dnxhr_hq ";
-                break;
-            case CODEC_DNXHR_SQ_1080p_8bit:
-                format = "format=yuv422p";
-                option2 = "-profile:v dnxhr_sq ";
-                break;
-            case CODEC_DNXHR_LB_1080p_8bit:
-            default:
-                format = "format=yuv422p";
-                option2 = "-profile:v dnxhr_lb ";
-                break;
-            }
-        }
+        format = "format=yuv422p10";
+        option2 = "";
 
         bool error = false;
 
-        if( ( ( m_codecProfile == CODEC_DNXHD ) && ( m_codecOption == CODEC_DNXHD_1080p_10bit ) )
-         || m_codecProfile == CODEC_DNXHR )
+        if( m_codecOption == CODEC_DNXHD_1080p_10bit )
         {
             if( getFramerate() == 25.0 )                option = QString( "-vf scale=w=1920:h=1080:in_color_matrix=bt601:out_color_matrix=bt709,fps=25,%1%2 -b:v 185M" ).arg( format ).arg( hdrString );
             else if( getFramerate() == 50.0 )           option = QString( "-vf scale=w=1920:h=1080:in_color_matrix=bt601:out_color_matrix=bt709,fps=50,%1%2 -b:v 365M" ).arg( format ).arg( hdrString );
@@ -2392,10 +2435,9 @@ void MainWindow::startExportPipe(QString fileName)
             return;
         }
 
-        program.append( QString( " -r %1 -y -f rawvideo -s %2 -pix_fmt rgb48 -i - -c:v dnxhd %3%4 -color_primaries bt709 -color_trc bt709 -colorspace bt709 \"%5\"" )
+        program.append( QString( " -r %1 -y -f rawvideo -s %2 -pix_fmt rgb48 -i - -c:v dnxhd %3 -color_primaries bt709 -color_trc bt709 -colorspace bt709 \"%4\"" )
                     .arg( fps )
                     .arg( resolution )
-                    .arg( option2 )
                     .arg( option )
                     .arg( output ) );
     }
@@ -2587,7 +2629,7 @@ void MainWindow::startExportEXR(QString fileName)
     if( ui->checkBoxRawFixEnable->isChecked() ) m_pMlvObject->llrawproc->fix_raw = 1;
 
     //StatusDialog
-    m_pStatusDialog->ui->progressBar->setMaximum( m_exportQueue.first()->cutOut() - m_exportQueue.first()->cutIn() + 1 );
+    m_pStatusDialog->ui->progressBar->setMaximum( int(m_exportQueue.first()->cutOut() - m_exportQueue.first()->cutIn() + 1) );
     m_pStatusDialog->ui->progressBar->setValue( 0 );
     m_pStatusDialog->open();
     //Frames in the export queue?!
@@ -2621,9 +2663,9 @@ void MainWindow::startExportEXR(QString fileName)
         if( m_codecOption == CODEC_CNDG_DEFAULT ) wavFileName = wavFileName.append( "/%1.wav" ).arg( fileName );
         else wavFileName = wavFileName.append( "/%1_1_%2-%3-%4_0001_C0000.wav" )
             .arg( fileName )
-            .arg( getMlvTmYear( m_pMlvObject ), 2, 10, QChar('0') )
-            .arg( getMlvTmMonth( m_pMlvObject ), 2, 10, QChar('0') )
-            .arg( getMlvTmDay( m_pMlvObject ), 2, 10, QChar('0') );
+            .arg( int(getMlvTmYear( m_pMlvObject )), 2, 10, QChar('0') )
+            .arg( int(getMlvTmMonth( m_pMlvObject )), 2, 10, QChar('0') )
+            .arg( int(getMlvTmDay( m_pMlvObject )), 2, 10, QChar('0') );
         //qDebug() << wavFileName;
 #ifdef Q_OS_UNIX
         writeMlvAudioToWaveCut( m_pMlvObject, wavFileName.toUtf8().data(), m_exportQueue.first()->cutIn(), m_exportQueue.first()->cutOut() );
@@ -2677,12 +2719,22 @@ void MainWindow::startExportEXR(QString fileName)
         picAR[2] = 1; picAR[3] = 1;
     }
 
+    std::vector< std::pair<std::string, std::string> > metadata;
+    metadata.push_back( std::pair<std::string, std::string>("Camera", ACTIVE_CLIP->getElement( 2 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Lens", ACTIVE_CLIP->getElement( 3 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Focal length", ACTIVE_CLIP->getElement( 8 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Shutter", ACTIVE_CLIP->getElement( 9 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Aperture", ACTIVE_CLIP->getElement( 10 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Iso", ACTIVE_CLIP->getElement( 11 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Bit depth", ACTIVE_CLIP->getElement( 13 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Date", ACTIVE_CLIP->getElement( 14 ).toString().toStdString() ));
+
     AcesRender& Aces_render = AcesRender::getInstance();
     Option& options = Aces_render.getSettings();
     options.mat_method = (matMethods_t)1;//(matMethods_t)m_matrixMethod;
     options.wb_method = (wbMethods_t)0;//(wbMethods_t)m_whiteBalanceMethod;
-    options.scale = 1.;
-    options.highlight = 2;
+    options.scale = 4.;
+    options.highlight = 3;
 
     //Init DNG data struct
     dngObject_t * cinemaDng = initDngObject( m_pMlvObject, m_codecProfile - 6, getFramerate(), picAR);
@@ -2736,7 +2788,7 @@ void MainWindow::startExportEXR(QString fileName)
             {
             //Save ACES EXR frame
 #ifdef Q_OS_UNIX
-                Aces_render.outputACES(filePathNr.toUtf8().data());
+                Aces_render.outputACES(filePathNr.toUtf8().data(), metadata);
 #else
                 Aces_render.outputACES(filePathNr.toLatin1().data());
 #endif
@@ -3105,7 +3157,7 @@ void MainWindow::startExportAVFoundation(QString fileName)
     if( m_codecProfile == CODEC_PRORES422ST ) avfCodec = AVF_CODEC_PRORES_422;
     else if( m_codecProfile == CODEC_H264 ) avfCodec = AVF_CODEC_H264;
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101300
-    else if( m_codecProfile == CODEC_H265 ) avfCodec = AVF_CODEC_HEVC;
+    else if( m_codecProfile == CODEC_H265_8 ) avfCodec = AVF_CODEC_HEVC;
 #endif
     else avfCodec = AVF_CODEC_PRORES_4444;
 
@@ -3185,7 +3237,7 @@ void MainWindow::startExportAVFoundation(QString fileName)
     for( uint64_t frame = ( m_exportQueue.first()->cutIn() - 1 ); frame < m_exportQueue.first()->cutOut(); frame++ )
     {
         //Get&Encode
-        if( m_codecProfile == CODEC_H264 )
+        if( m_codecProfile == CODEC_H264 || m_codecProfile == CODEC_H265_8 )
         {
             getMlvProcessedFrame8( m_pMlvObject, frame, m_pRawImage, QThread::idealThreadCount() );
             if( scaled )
@@ -4845,7 +4897,7 @@ void MainWindow::replaceReceipt(ReceiptSettings *receiptTarget, ReceiptSettings 
 
     if( paste && cdui->checkBoxDebayer->isChecked() )          receiptTarget->setDebayer( receiptSource->debayer() );
 
-    if( paste )
+    if( paste && cdui->checkBoxToning->isChecked() )
     {
         receiptTarget->setTone( receiptSource->tone() );
         receiptTarget->setToningStrength( receiptSource->toningStrength() );
@@ -6531,6 +6583,12 @@ void MainWindow::on_actionExport_triggered()
         fileType = tr("Audio Wave (*.wav)");
         fileEnding = ".wav";
     }
+    else if( m_codecProfile == CODEC_EXR )
+    {
+    	saveFileName.append( ".exr" );
+		fileType = tr("OpenEXR file (*.exr)");
+		fileEnding = ".exr";
+    }
     else
     {
         if( ( m_codecProfile == CODEC_H264 || m_codecProfile == CODEC_H265_8 || m_codecProfile == CODEC_H265_10 || m_codecProfile == CODEC_H265_12 )
@@ -6982,6 +7040,20 @@ void MainWindow::on_actionUseIgvDebayer_triggered()
 
 //Use AHD debayer
 void MainWindow::on_actionUseAhdDebayer_triggered()
+{
+    selectDebayerAlgorithm();
+    return;
+}
+
+//Use RCD debayer
+void MainWindow::on_actionUseRcdDebayer_triggered()
+{
+    selectDebayerAlgorithm();
+    return;
+}
+
+//Use DCB debayer
+void MainWindow::on_actionUseDcbDebayer_triggered()
 {
     selectDebayerAlgorithm();
     return;
@@ -8055,7 +8127,7 @@ void MainWindow::exportHandler( void )
               || ( m_codecProfile == CODEC_PRORES4444 && m_codecOption == CODEC_PRORES_AVFOUNDATION )
               || ( m_codecProfile == CODEC_H264 && m_codecOption == CODEC_H264_AVFOUNDATION )
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101300
-              || ( m_codecProfile == CODEC_H265 && m_codecOption == CODEC_H265_AVFOUNDATION )
+              || ( m_codecProfile == CODEC_H265_8 && m_codecOption == CODEC_H265_AVFOUNDATION )
 #endif
                )
         {
@@ -9978,6 +10050,12 @@ void MainWindow::selectDebayerAlgorithm()
         case ReceiptSettings::AHD:
             setMlvUseAhdDebayer( m_pMlvObject );
             break;
+        case ReceiptSettings::RCD:
+            setMlvUseRcdDebayer( m_pMlvObject );
+            break;
+        case ReceiptSettings::DCB:
+            setMlvUseDcbDebayer( m_pMlvObject );
+            break;
         default:
             break;
         }
@@ -10022,6 +10100,18 @@ void MainWindow::selectDebayerAlgorithm()
             setMlvUseAhdDebayer( m_pMlvObject );
             disableMlvCaching( m_pMlvObject );
             m_pChosenDebayer->setText( tr( "AHD" ) );
+        }
+        else if( ui->actionUseRcdDebayer->isChecked() )
+        {
+            setMlvUseRcdDebayer( m_pMlvObject );
+            disableMlvCaching( m_pMlvObject );
+            m_pChosenDebayer->setText( tr( "RCD" ) );
+        }
+        else if( ui->actionUseDcbDebayer->isChecked() )
+        {
+            setMlvUseDcbDebayer( m_pMlvObject );
+            disableMlvCaching( m_pMlvObject );
+            m_pChosenDebayer->setText( tr( "DCB" ) );
         }
         else if( ui->actionAlwaysUseAMaZE->isChecked() )
         {

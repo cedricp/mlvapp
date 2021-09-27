@@ -1,11 +1,26 @@
 # :fire::fire::fire: MLV App :fire::fire::fire:
 What is MLV App? Lightroom, but for Magic Lantern MLV Video (and open source and cross platform)
 
-![MLV App](https://user-images.githubusercontent.com/30245296/64981183-c8bfae80-d8bb-11e9-9b0c-cd1f8041953f.png)
+[![Lates Release](https://img.shields.io/github/v/release/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/releases)
+
+[![Qt&5](https://img.shields.io/badge/Qt-5-brightgreen)](https://doc.qt.io/qt-5/)
+
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/pulse)
+[![Last Commit](https://img.shields.io/github/last-commit/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/pulse)
+[![Contributors](https://img.shields.io/github/contributors/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/graphs/contributors)
+
+[![Open Issues](https://img.shields.io/github/issues/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/issues)
+[![Closed Issues](https://img.shields.io/github/issues-closed/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/issues?q=is%3Aissue+is%3Aclosed)
+
+[![Open PRs](https://img.shields.io/github/issues-pr/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/pulls)
+[![Closed PRs](https://img.shields.io/github/issues-pr-closed/ilia3101/MLV-App)](https://github.com/ilia3101/MLV-App/pulls?q=is%3Apr+is%3Aclosed)
+
+![MLV App](https://user-images.githubusercontent.com/30245296/110171956-c4af8580-7dfc-11eb-81a9-769ddc2c879c.png)
 
 ## Useful links
 - [Find the latest official releases here](https://mlv.app). Download, unpack and start
 - Find debian packages [here](http://phd-sid.ethz.ch/debian/mlv-app/) (thanks to @alexmyczko)
+- Find Arch Linux image [here](https://aur.archlinux.org/packages/mlv.app/) (thanks to davvore33)
 - Ask questions on the [Magic Lantern forum thread](https://www.magiclantern.fm/forum/index.php?topic=20025.0)
 - Report bugs on the [issues page](https://github.com/ilia3101/MLV-App/issues)
 - A user manual can be found [here](https://github.com/ilia3101/MLV-App/wiki) and in-app
@@ -16,7 +31,7 @@ What is MLV App? Lightroom, but for Magic Lantern MLV Video (and open source and
 - Support for spanned mlv (.m00, .m01, ...)
 - Support for lossless mlv
 - Support for any bit depth (…, 10, 12, 14bit)
-- Demosaic algorithms: None, Simple (fastest), bilinear, multithreaded AMaZE & LMMSE, AHD or IGV
+- Demosaic algorithms: None, Simple (fastest), AHD, multithreaded bilinear and AMaZE; and highly optimized LMMSE, DCB, RCD and IGV offered by [librtprocess](https://github.com/CarVac/librtprocess)
 - Processing with many parameters (exposure, contrast, white balance, clarity, vibrance, saturation, dark & light adjustments, highlights & shadows, gradation curves, sharpen, hue vs. hue/saturation/luminance curves, toning, …)
 - Processing filters for film emulation powered by neural networks :ghost:
 - Processing in sRGB or several LOG
@@ -46,7 +61,7 @@ What is MLV App? Lightroom, but for Magic Lantern MLV Video (and open source and
 - Frame rate override for export and playback
 - Aspect Ratio: stretch width (1.33x, 1.5x, 1.75x, 1.8x, 2.0x) and height (0.3x, 1.67x, 3.0x, 5.0x auto detected for latest MLVs) for playback and export per clip in session. Manually changed AR is inserted to exported cDNG header.
 - Upside down transformation
-- Resize frame resolution for (batch) export using AVIR resizing algorithm
+- Resize frame resolution for (batch) export using [AVIR](https://github.com/avaneev/avir) resizing algorithm
 - Clip batch export
 - Smooth artifacts filter (minimizes moiree) for all ffmpeg export codecs, realized by ffmpeg filter combination
 - 2D median denoiser (don't expect wonders!)
@@ -83,7 +98,11 @@ What is MLV App? Lightroom, but for Magic Lantern MLV Video (and open source and
 
 A detailed guide for compiling MLV-App on Linux can be found [here](https://sternenkarten.com/tutorial-englisch/) (thanks to @seescho).
 
-If the qmake command fails, this helps on Ubuntu 20.04: `sudo apt install qtchooser qtmultimedia5-dev qt5-qmake`
+If you have a Debian based distro, these packages will give you everything you need: 
+```
+sudo apt install qt5-default qtchooser qtmultimedia5-dev qt5-qmake
+```
+(tested on Ubuntu 20.04 and ChromeOS linnux)
 
 #### Cocoa App (very very deprecated)
 ```

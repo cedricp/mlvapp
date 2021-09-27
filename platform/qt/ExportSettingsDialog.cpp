@@ -350,7 +350,7 @@ void ExportSettingsDialog::on_comboBoxCodec_currentIndexChanged(int index)
         }
 #endif
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101300
-        if( index == CODEC_H265 )
+        if( index == CODEC_H265_8 )
         {
             ui->comboBoxOption->addItem( QString( "Apple AVFoundation" ) );
         }
@@ -577,8 +577,7 @@ void ExportSettingsDialog::on_comboBoxOption_currentIndexChanged(const QString &
          && ( ui->comboBoxCodec->currentIndex() != CODEC_CDNG )
          && ( ui->comboBoxCodec->currentIndex() != CODEC_CDNG_LOSSLESS )
          && ( ui->comboBoxCodec->currentIndex() != CODEC_CDNG_FAST )
-         && ( ui->comboBoxCodec->currentIndex() != CODEC_DNXHD )
-         && ( ui->comboBoxCodec->currentIndex() != CODEC_DNXHR ) )
+         && ( ui->comboBoxCodec->currentIndex() != CODEC_DNXHD ) )
         {
             ui->checkBoxExportAudio->setEnabled( true );
             ui->checkBoxResize->setEnabled( true );

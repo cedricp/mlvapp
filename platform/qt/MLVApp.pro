@@ -47,8 +47,8 @@ macx: LIBS += -framework CoreVideo \
 #    QMAKE_CC = /usr/local/opt/llvm/bin/clang
 #    QMAKE_CXX = /usr/local/opt/llvm/bin/clang++
 #    QMAKE_LINK = /usr/local/opt/llvm/bin/clang++
-#    QMAKE_CFLAGS += -fopenmp
-#    QMAKE_CXXFLAGS += -fopenmp
+#    QMAKE_CFLAGS += -fopenmp -ftree-vectorize
+#    QMAKE_CXXFLAGS += -fopenmp -std=c++11 -ftree-vectorize
 #    INCLUDEPATH += -I/usr/local/opt/llvm/include
 #    LIBS += -L/usr/local/opt/llvm/lib -lomp
 #    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.8
@@ -57,8 +57,8 @@ macx: LIBS += -framework CoreVideo \
 # Windows, standard use with standard Qt download.
 # Else comment these lines!
 win32{
-    QMAKE_CFLAGS += -O2 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -D_FILE_OFFSET_BITS=64 -std=c99
-    QMAKE_CXXFLAGS += -fopenmp
+    QMAKE_CFLAGS += -O2 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -D_FILE_OFFSET_BITS=64 -std=c99 -ftree-vectorize
+    QMAKE_CXXFLAGS += -fopenmp -std=c++11 -ftree-vectorize
     LIBS += -llibgomp-1
 }
 
@@ -75,8 +75,8 @@ win32{
 #        "C:\\msys64\\mingw64\\x86_64-w64-mingw32\\include" \
 #        "C:\\msys64\\mingw64\\x86_64-w64-mingw32\\lib" \
 #        "C:\\msys64\\mingw64\\bin"
-#    QMAKE_CFLAGS += -O3 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -D_FILE_OFFSET_BITS=64 -std=c99
-#    QMAKE_CXXFLAGS += -static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lws2_32 -lshell32 -luser32 -lkernel32 -lmingw32 -fopenmp
+#    QMAKE_CFLAGS += -O3 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -D_FILE_OFFSET_BITS=64 -std=c99 -ftree-vectorize
+#    QMAKE_CXXFLAGS += -static -static-libgcc -static-libstdc++ -Wl,-Bstatic -lws2_32 -lshell32 -luser32 -lkernel32 -lmingw32 -fopenmp -std=c++11 -ftree-vectorize
 #    LIBS += -lgomp
 #    DEFINES += QT_NODLL
 #    CONFIG += STATIC
@@ -84,8 +84,8 @@ win32{
 
 # Linux
 linux-g++*{
-    QMAKE_CFLAGS += -O3 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -std=c99
-    QMAKE_CXXFLAGS += -fopenmp
+    QMAKE_CFLAGS += -O3 -fopenmp -msse4.1 -mssse3 -msse3 -msse2 -msse -std=c99 -ftree-vectorize
+    QMAKE_CXXFLAGS += -fopenmp -std=c++11 -ftree-vectorize
     INCLUDEPATH += /usr/local/include/rawtoaces/include /usr/local/include/rawtoaces/lib
     LIBS += -lgomp -lrawtoaces_util.0.1.0
 }
@@ -99,7 +99,6 @@ SOURCES += \
     ../../src/debayer/amaze_demosaic.c \
     ../../src/debayer/debayer.c \
     ../../src/debayer/conv.c \
-    ../../src/debayer/dmzhangwu.c \
     ../../src/debayer/basic.c \
     ../../src/ca_correct/CA_correct_RT.c \
     ../../src/matrix/matrix.c \
@@ -119,8 +118,6 @@ SOURCES += \
     ../../src/processing/filter/genann/genann.c \
     ../../src/processing/image_profiles.c \
     ../../src/processing/cube_lut.c \
-    ../../src/debayer/igv_demosaic.c \
-    ../../src/debayer/ahd.c \
     ../../src/mlv/llrawproc/dualiso.c \
     ../../src/dng/dng.c \
     ScopesLabel.cpp \
@@ -180,7 +177,25 @@ SOURCES += \
     ../../src/processing/tinyexpr/tinyexpr.c \
     FocusPixelMapManager.cpp \
     DownloadManager.cpp \
-    StatusFpmDialog.cpp
+    StatusFpmDialog.cpp \
+    ../../src/librtprocess/src/demosaic/ahd.cc \
+    ../../src/librtprocess/src/demosaic/amaze.cc \
+    ../../src/librtprocess/src/demosaic/bayerfast.cc \
+    ../../src/librtprocess/src/demosaic/border.cc \
+    ../../src/librtprocess/src/demosaic/dcb.cc \
+    ../../src/librtprocess/src/demosaic/hphd.cc \
+    ../../src/librtprocess/src/demosaic/igv.cc \
+    ../../src/librtprocess/src/demosaic/lmmse.cc \
+    ../../src/librtprocess/src/demosaic/markesteijn.cc \
+    ../../src/librtprocess/src/demosaic/rcd.cc \
+    ../../src/librtprocess/src/demosaic/vng4.cc \
+    ../../src/librtprocess/src/demosaic/xtransfast.cc \
+    ../../src/librtprocess/src/postprocess/hilite_recon.cc \
+    ../../src/librtprocess/src/preprocess/CA_correct.cc \
+    ../../src/librtprocess/src/include/librtprocesswrapper.cpp \
+    ../../src/debayer/ahdOld.c
+
+INCLUDEPATH += ../../src/librtprocess/src/include/
 
 macx: SOURCES += ../cocoa/avf_lib/avf_lib.m
 
@@ -188,7 +203,6 @@ HEADERS += MainWindow.h \
     ../../src/debayer/debayer.h \
     ../../src/debayer/helpersse2.h \
     ../../src/debayer/conv.h \
-    ../../src/debayer/dmzhangwu.h \
     ../../src/debayer/basic.h \
     ../../src/ca_correct/CA_correct_RT.h \
     ../../src/matrix/matrix.h \
@@ -291,7 +305,24 @@ HEADERS += MainWindow.h \
     ../../src/processing/tinyexpr/tinyexpr.h \
     DownloadManager.h \
     FocusPixelMapManager.h \
-    StatusFpmDialog.h
+    StatusFpmDialog.h \
+    ../../src/librtprocess/src/include/array2D.h \
+    ../../src/librtprocess/src/include/bayerhelper.h \
+    ../../src/librtprocess/src/include/boxblur.h \
+    ../../src/librtprocess/src/include/gauss.h \
+    ../../src/librtprocess/src/include/helpersse2.h \
+    ../../src/librtprocess/src/include/jaggedarray.h \
+    ../../src/librtprocess/src/include/librtprocess.h \
+    ../../src/librtprocess/src/include/LUT.h \
+    ../../src/librtprocess/src/include/median.h \
+    ../../src/librtprocess/src/include/mytime.h \
+    ../../src/librtprocess/src/include/opthelper.h \
+    ../../src/librtprocess/src/include/rt_math.h \
+    ../../src/librtprocess/src/include/StopWatch.h \
+    ../../src/librtprocess/src/include/xtranshelper.h \
+    ../../src/librtprocess/src/include/librtprocesswrapper.h \
+    ../../src/librtprocess/src/include/sleef.h \
+    ../../src/librtprocess/src/include/sleefsseavx.h
 
 macx: HEADERS += \
     ../cocoa/avf_lib/avencoder.h \
@@ -328,7 +359,7 @@ DISTFILES += \
 
 #Application version
 VERSION_MAJOR = 1
-VERSION_MINOR = 11
+VERSION_MINOR = 12
 VERSION_PATCH = 0
 VERSION_BUILD = 0
 

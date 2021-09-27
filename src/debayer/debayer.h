@@ -9,10 +9,8 @@ void debayerEasy(uint16_t * __restrict debayerto, float * __restrict bayerdata, 
 void debayerBasic(uint16_t * __restrict debayerto, float * __restrict bayerdata, int width, int height, int threads);
 /* More useable amaze, threads number should be the number of cores(or threads if >= i7) your cpu has */
 void debayerAmaze(uint16_t * __restrict debayerto, float * __restrict bayerdata, int width, int height, int threads, int blacklevel);
-/* Use LMMSE debayer */
-void debayerLmmse(uint16_t * __restrict debayerto, float * __restrict bayerdata, int width, int height, int threads, int blacklevel);
-/* More useable IGV */
-void debayerIgv(uint16_t * __restrict debayerto, float * __restrict bayerdata, int width, int height, int blacklevel);
+/* via librtprocess */
+void debayerLibRtProcess(uint16_t *__restrict debayerto, float *__restrict bayerdata, int width, int height, int algorithm, double camMatrix[9]);
 /* AHD debayer */
 void debayerAhd(uint16_t *__restrict debayerto, float *__restrict bayerdata, int width, int height);
 
@@ -37,16 +35,6 @@ typedef struct {
     int blacklevel;
 } amazeinfo_t;
 
-/* LMMSE input as struct for posixz */
-typedef struct {
-    float * __restrict Input;
-    float * __restrict Output;
-    int winx; int winy; /* crop window for demosaicing */
-    int winw; int winh;
-    int numOverallPixels;
-    int blacklevel;
-} lmmseinfo_t;
-
 /* Amaze demosaic */
 void
 #ifdef __MINGW32__
@@ -56,8 +44,5 @@ __attribute__ ((force_align_arg_pointer))
 
 /*AMaZE algo*/
 demosaic(amazeinfo_t * inputdata);
-
-/* igv algo */
-void igv_demosaic(amazeinfo_t * inputdata);
 
 #endif

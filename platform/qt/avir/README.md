@@ -21,14 +21,14 @@ which fixes smoothing introduced at previous steps.
 
 The resizing algorithm was designed to provide the best visual quality. The
 author even believes this algorithm provides the "ultimate" level of
-quality (for an orthogonal resizing) which cannot be increased further: no
-math exists to provide a better frequency response, better anti-aliasing
-quality and at the same time having less ringing artifacts: these are 3
-elements that define any resizing algorithm's quality; in AVIR practice these
-elements have a high correlation to each other, so they can be represented by
-a single parameter (AVIR offers several parameter sets with varying quality).
-Algorithm's time performance turned out to be very good as well (for the
-"ultimate" image quality).
+quality (for an orthogonal, non neural-network, resizing) which cannot be
+increased further: no math exists to provide a better frequency response,
+better anti-aliasing quality and at the same time having less ringing
+artifacts: these are 3 elements that define any resizing algorithm's quality;
+in AVIR practice these elements have a high correlation to each other, so they
+can be represented by a single parameter (AVIR offers several parameter sets
+with varying quality). Algorithm's time performance turned out to be very good
+as well (for the "ultimate" image quality).
 
 An important element utilized by this algorithm is the so called Peaked Cosine
 window function, which is applied over sinc function in all filters. Please
@@ -61,6 +61,9 @@ change during upsizing.
 
 *AVIR is devoted to women. Your digital photos can look good at any size!*
 
+P.S. Please credit the author of this library in your documentation in the
+following way: "AVIR image resizing algorithm designed by Aleksey Vaneev".
+
 ## Requirements ##
 
 C++ compiler and system with efficient "float" floating point (24-bit
@@ -83,12 +86,26 @@ isolating it from all other code. The code is thread-safe. You need just
 a single resizer object per running application, at any time, even when
 resizing images concurrently.
 
-To resize images in your application, simply add 3 lines of code:
+To resize images in your application, simply add 3 lines of code (note that
+you may need to change `ImageResizer( 8 )` here, to specify your image's true
+bit resolution, which may be 10 or even 16):
 
     #include "avir.h"
     avir :: CImageResizer<> ImageResizer( 8 );
     ImageResizer.resizeImage( InBuf, 640, 480, 0, OutBuf, 1024, 768, 3, 0 );
     (multi-threaded operation requires additional coding, see the documentation)
+
+If you are not too familiar with the low-level "packed interleaved" image
+storage format, the `InBuf` is expected to be `w*h*c` elements in size, where
+`w` and `h` is the width and the height of the image in pixels, respectively,
+and `c` is the number of color channels in the image. In the example above,
+the size of the `InBuf` is `640*480*3=921600` elements. If you are working
+with 8-bit images, the buffer and the elements should have the `uint8_t*`
+type; if you are working with 16-bit images, they should have the `uint16_t*`
+type. Note that when processing 16-bit images, the value of `16` should be
+used in resizer's constructor. AVIR's algorithm does not discern between
+channel packing order (`RGBA`, `ARGB`, `BGRA`, etc.), so if the `BGRA`
+ordered elements were passed to it, the result will be also `BGRA`.
 
 For low-ringing performance:
 
@@ -195,14 +212,12 @@ first to reduce aliasing during subsequent resizing, and at last filtered by a
 correction filter. Such approach allows algorithm to maintain a stable level
 of quality regardless of the resizing "k" factor used.
 
-This library includes a binary command line tool "imageresize" for major
+This library includes a binary command line tool "imageresize" for some
 desktop platforms. This tool was designed to be used as a demonstration of
 library's performance, and as a reference, it is multi-threaded (the `-t`
 switch can be used to control the number of threads utilized). This tool uses
 plain "float" processing (no explicit SIMD) and relies on automatic compiler
-optimization (with Win64 binary being the "main" binary as it was compiled
-with the best ICC optimization options for the time being). This tool uses the
-following libraries:
+optimization. This tool uses the following libraries:
 * turbojpeg Copyright (c) 2009-2013 D. R. Commander
 * libpng Copyright (c) 1998-2013 Glenn Randers-Pehrson
 * zlib Copyright (c) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -219,10 +234,9 @@ The use of certain low-pass filters and 2X upsampling in this library is
 hardly debatable, because they are needed to attain a certain anti-aliasing
 effect and keep ringing artifacts low. But the use of sinc function-based
 interpolation filter that is 18 taps-long (may be higher, up to 36 taps in
-practice) can be questioned, because even in 0th order case such
-interpolation filter requires 18 multiply-add operations. Comparatively, an
-optimal Hermite or cubic interpolation spline requires 8 multiply and 11 add
-operations.
+practice) can be questioned, because such interpolation filter requires 18
+multiply-add operations. Comparatively, an optimal Hermite or cubic
+interpolation spline requires 8 multiply and 11 add operations.
 
 One of the reasons 18-tap filter is preferred, is because due to memory
 bandwidth limitations using a lower-order filter does not provide any
@@ -337,6 +351,11 @@ This library is used by:
   * [Pretext contact maps](https://github.com/wtsi-hpag/PretextSnapshot)
   * [LVC Audio](https://lvcaudio.com)
   * [Trainz](https://www.trainzportal.com/files/TRS19/credits.html)
+  * [MLV App](https://mlv.app/)
+
+[This video](https://www.youtube.com/watch?v=oNF-c6YX7-8) was "unsqueezed"
+with AVIR by a factor of 3 from ML RAW video, and at a final stage downsampled
+to 4K resolution.
 
 Please drop me a note at aleksey.vaneev@gmail.com and I will include a link to
 your software product to the list of users. This list is important at
@@ -349,6 +368,36 @@ maintaining confidence in this library among the interested parties.
 [Become a patron on Patreon](https://patreon.com/aleksey_vaneev)
 
 ## Change log ##
+
+Version 2.9:
+
+* Removed a rarely-used half-band resizing step completely since it offers no
+practical performance nor quality benefits.
+* Optimized filter generation function (removed divisions by a constant) as
+filters are always post-normalized anyway. This may reduce overhead when
+creating thumbnail-sized images.
+
+Version 2.8:
+
+* Fixed regression with the copy-constructor of CImageResizeVars class
+(previously it caused uninitialized accesses).
+* Removed filter length optimization as it did not reduce overhead measurably.
+* Optimized "peaked cosine" window function generator (removed division).
+* Added "unbiasing" to resizer - an unconventional approach which reduces peak
+error significantly, at the expense of 5% increased overhead.
+* Reoptimized filter parameters, now yielding an unprecedented quality.
+
+Version 2.7:
+
+* Added normalization of individual fractional delay filters. This reduced
+peak error by 3 dB, which is substantial for image resizing.
+* Reoptimized all filter parameters resulting in better frequency response
+linearity.
+* Added AVIR_NOCTOR macro to avoid copy-constructing and copying objects of
+some classes via a default copy function.
+* Added copy-constructor and assignment operator to the CImageResizerVars
+class, to avoid uninitialized memory copying.
+* Corrected automatic image offseting and "k" factor on image upsizing.
 
 Version 2.6:
 

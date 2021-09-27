@@ -203,6 +203,8 @@
      <addaction name="actionUseIgvDebayer"/>
      <addaction name="actionAlwaysUseAMaZE"/>
      <addaction name="actionUseAhdDebayer"/>
+     <addaction name="actionUseRcdDebayer"/>
+     <addaction name="actionUseDcbDebayer"/>
      <addaction name="actionCaching"/>
      <addaction name="actionDontSwitchDebayerForPlayback"/>
     </widget>
@@ -468,9 +470,9 @@ QGroupBox::indicator:checked:disabled {
           <property name="geometry">
            <rect>
             <x>0</x>
-            <y>-2547</y>
-            <width>266</width>
-            <height>5571</height>
+            <y>0</y>
+            <width>265</width>
+            <height>5525</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayoutScrollArea">
@@ -2711,6 +2713,9 @@ QGroupBox::indicator:checked:disabled {
                      <pointsize>10</pointsize>
                     </font>
                    </property>
+                   <property name="currentText">
+                    <string>AMaZE</string>
+                   </property>
                    <property name="currentIndex">
                     <number>5</number>
                    </property>
@@ -2747,6 +2752,16 @@ QGroupBox::indicator:checked:disabled {
                    <item>
                     <property name="text">
                      <string>AHD</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>RCD</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>DCB</string>
                     </property>
                    </item>
                   </widget>
@@ -10579,6 +10594,25 @@ QGroupBox::indicator:checked:disabled {
    </property>
    <property name="text">
     <string>Table Mode Bottom</string>
+   </property>
+  </action>
+  <action name="actionUseRcdDebayer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>RCD</string>
+   </property>
+   <property name="toolTip">
+    <string>RCD</string>
+   </property>
+  </action>
+  <action name="actionUseDcbDebayer">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>DCB</string>
    </property>
   </action>
  </widget>
