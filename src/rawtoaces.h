@@ -2,6 +2,7 @@
 #define RAWTOACES_H
 
 #include <vector>
+#include <utility>
 
 enum matMethods_t { matMethod0, matMethod1, matMethod2 };
 enum wbMethods_t { wbMethod0, wbMethod1, wbMethod2, wbMethod3, wbMethod4 };
@@ -41,7 +42,7 @@ class AcesRender {
         int preprocessRaw ( const char * path );
         int preprocessRawBuffer(char* buffer, unsigned long buffer_size);
         int postprocessRaw ( );
-        void outputACES ( const char*filename = NULL );
+        void outputACES ( const char*filename, std::vector< std::pair<std::string, std::string >> metadata );
         struct Option& getSettings();
         int fetchIlluminant ( const char * illumType = "na" );
 

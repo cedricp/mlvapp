@@ -8,6 +8,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "math.h"
+#include <utility>
 
 #include <QMessageBox>
 #include <QThread>
@@ -2628,7 +2629,7 @@ void MainWindow::startExportEXR(QString fileName)
     if( ui->checkBoxRawFixEnable->isChecked() ) m_pMlvObject->llrawproc->fix_raw = 1;
 
     //StatusDialog
-    m_pStatusDialog->ui->progressBar->setMaximum( m_exportQueue.first()->cutOut() - m_exportQueue.first()->cutIn() + 1 );
+    m_pStatusDialog->ui->progressBar->setMaximum( int(m_exportQueue.first()->cutOut() - m_exportQueue.first()->cutIn() + 1) );
     m_pStatusDialog->ui->progressBar->setValue( 0 );
     m_pStatusDialog->open();
     //Frames in the export queue?!
@@ -2662,9 +2663,9 @@ void MainWindow::startExportEXR(QString fileName)
         if( m_codecOption == CODEC_CNDG_DEFAULT ) wavFileName = wavFileName.append( "/%1.wav" ).arg( fileName );
         else wavFileName = wavFileName.append( "/%1_1_%2-%3-%4_0001_C0000.wav" )
             .arg( fileName )
-            .arg( getMlvTmYear( m_pMlvObject ), 2, 10, QChar('0') )
-            .arg( getMlvTmMonth( m_pMlvObject ), 2, 10, QChar('0') )
-            .arg( getMlvTmDay( m_pMlvObject ), 2, 10, QChar('0') );
+            .arg( int(getMlvTmYear( m_pMlvObject )), 2, 10, QChar('0') )
+            .arg( int(getMlvTmMonth( m_pMlvObject )), 2, 10, QChar('0') )
+            .arg( int(getMlvTmDay( m_pMlvObject )), 2, 10, QChar('0') );
         //qDebug() << wavFileName;
 #ifdef Q_OS_UNIX
         writeMlvAudioToWaveCut( m_pMlvObject, wavFileName.toUtf8().data(), m_exportQueue.first()->cutIn(), m_exportQueue.first()->cutOut() );
@@ -2718,12 +2719,22 @@ void MainWindow::startExportEXR(QString fileName)
         picAR[2] = 1; picAR[3] = 1;
     }
 
+    std::vector< std::pair<std::string, std::string> > metadata;
+    metadata.push_back( std::pair<std::string, std::string>("Camera", ACTIVE_CLIP->getElement( 2 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Lens", ACTIVE_CLIP->getElement( 3 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Focal length", ACTIVE_CLIP->getElement( 8 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Shutter", ACTIVE_CLIP->getElement( 9 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Aperture", ACTIVE_CLIP->getElement( 10 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Iso", ACTIVE_CLIP->getElement( 11 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Bit depth", ACTIVE_CLIP->getElement( 13 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Date", ACTIVE_CLIP->getElement( 14 ).toString().toStdString() ));
+
     AcesRender& Aces_render = AcesRender::getInstance();
     Option& options = Aces_render.getSettings();
     options.mat_method = (matMethods_t)1;//(matMethods_t)m_matrixMethod;
     options.wb_method = (wbMethods_t)0;//(wbMethods_t)m_whiteBalanceMethod;
-    options.scale = 1.;
-    options.highlight = 2;
+    options.scale = 4.;
+    options.highlight = 3;
 
     //Init DNG data struct
     dngObject_t * cinemaDng = initDngObject( m_pMlvObject, m_codecProfile - 6, getFramerate(), picAR);
@@ -2777,7 +2788,7 @@ void MainWindow::startExportEXR(QString fileName)
             {
             //Save ACES EXR frame
 #ifdef Q_OS_UNIX
-                Aces_render.outputACES(filePathNr.toUtf8().data());
+                Aces_render.outputACES(filePathNr.toUtf8().data(), metadata);
 #else
                 Aces_render.outputACES(filePathNr.toLatin1().data());
 #endif
@@ -6571,6 +6582,12 @@ void MainWindow::on_actionExport_triggered()
         saveFileName.append( ".wav" );
         fileType = tr("Audio Wave (*.wav)");
         fileEnding = ".wav";
+    }
+    else if( m_codecProfile == CODEC_EXR )
+    {
+    	saveFileName.append( ".exr" );
+		fileType = tr("OpenEXR file (*.exr)");
+		fileEnding = ".exr";
     }
     else
     {
