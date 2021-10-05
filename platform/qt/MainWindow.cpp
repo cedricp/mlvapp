@@ -107,6 +107,7 @@ MainWindow::MainWindow(int &argc, char **argv, QWidget *parent) :
     m_zoomModeChanged = false;
     m_tryToSyncAudio = false;
     m_playbackStopped = false;
+    m_inClipDeleteProcess = false;
 
 
 #ifdef STDOUT_SILENT
@@ -1954,6 +1955,19 @@ void MainWindow::startExportPipe(QString fileName)
             scaled = true;
         }
     }
+    else if( m_codecProfile == CODEC_CINEFORM_10 || m_codecProfile == CODEC_CINEFORM_12 ) // resolution must be multiple of 16
+    {
+        if( width != width + (width % 16) )
+        {
+            width += width % 16;
+            scaled = true;
+        }
+        if( height != height + (height % 16) )
+        {
+            height += height % 16;
+            scaled = true;
+        }
+    }
 
     //FFMpeg export
 #if defined __linux__ && !defined APP_IMAGE
@@ -3711,6 +3725,11 @@ void MainWindow::readXmlElementsFromFile(QXmlStreamReader *Rxml, ReceiptSettings
             receipt->setContrast( Rxml->readElementText().toInt() );
             Rxml->readNext();
         }
+        else if( Rxml->isStartElement() && Rxml->name() == "pivot" )
+        {
+            receipt->setPivot( Rxml->readElementText().toInt() );
+            Rxml->readNext();
+        }
         else if( Rxml->isStartElement() && Rxml->name() == "temperature" )
         {
             receipt->setTemperature( Rxml->readElementText().toInt() );
@@ -4235,6 +4254,7 @@ void MainWindow::writeXmlElementsToFile(QXmlStreamWriter *xmlWriter, ReceiptSett
 {
     xmlWriter->writeTextElement( "exposure",                QString( "%1" ).arg( receipt->exposure() ) );
     xmlWriter->writeTextElement( "contrast",                QString( "%1" ).arg( receipt->contrast() ) );
+    xmlWriter->writeTextElement( "pivot",                   QString( "%1" ).arg( receipt->pivot() ) );
     xmlWriter->writeTextElement( "temperature",             QString( "%1" ).arg( receipt->temperature() ) );
     xmlWriter->writeTextElement( "tint",                    QString( "%1" ).arg( receipt->tint() ) );
     xmlWriter->writeTextElement( "clarity",                 QString( "%1" ).arg( receipt->clarity() ) );
@@ -4452,6 +4472,7 @@ void MainWindow::setSliders(ReceiptSettings *receipt, bool paste)
     m_setSliders = true;
     ui->horizontalSliderExposure->setValue( receipt->exposure() );
     ui->horizontalSliderContrast->setValue( receipt->contrast() );
+    ui->horizontalSliderPivot->setValue( receipt->pivot() );
     if( receipt->temperature() == -1 )
     {
         //Init Temp read from the file when imported and loaded very first time completely
@@ -4707,6 +4728,7 @@ void MainWindow::setReceipt( ReceiptSettings *receipt )
 {
     receipt->setExposure( ui->horizontalSliderExposure->value() );
     receipt->setContrast( ui->horizontalSliderContrast->value() );
+    receipt->setPivot( ui->horizontalSliderPivot->value() );
     receipt->setTemperature( ui->horizontalSliderTemperature->value() );
     receipt->setTint( ui->horizontalSliderTint->value() );
     receipt->setClarity( ui->horizontalSliderClarity->value() );
@@ -4823,6 +4845,7 @@ void MainWindow::replaceReceipt(ReceiptSettings *receiptTarget, ReceiptSettings 
 
     if( paste && cdui->checkBoxExposure->isChecked() )   receiptTarget->setExposure( receiptSource->exposure() );
     if( paste && cdui->checkBoxContrast->isChecked() )   receiptTarget->setContrast( receiptSource->contrast() );
+    if( paste && cdui->checkBoxPivot->isChecked() )      receiptTarget->setPivot( receiptSource->pivot() );
     if( paste && cdui->checkBoxWb->isChecked() )         receiptTarget->setTemperature( receiptSource->temperature() );
     if( paste && cdui->checkBoxWb->isChecked() )         receiptTarget->setTint( receiptSource->tint() );
     if( paste && cdui->checkBoxClarity->isChecked() )    receiptTarget->setClarity( receiptSource->clarity() );
@@ -4963,7 +4986,7 @@ int MainWindow::showFileInEditor(int row)
     //Stop Playback
     ui->actionPlay->setChecked( false );
     //Save slider receipt
-    if( !ACTIVE_RECEIPT->wasNeverLoaded() ) setReceipt( ACTIVE_RECEIPT );
+    if( !ACTIVE_RECEIPT->wasNeverLoaded() && !m_inClipDeleteProcess ) setReceipt( ACTIVE_RECEIPT );
     //Save new position in session
     int oldActive = SESSION_ACTIVE_CLIP_ROW;
     SET_ACTIVE_CLIP_IDX( row );
@@ -5024,6 +5047,7 @@ void MainWindow::addClipToExportQueue(int row, QString fileName)
     ReceiptSettings *receipt = new ReceiptSettings();
     receipt->setExposure( GET_RECEIPT( row )->exposure() );
     receipt->setContrast( GET_RECEIPT( row )->contrast() );
+    receipt->setPivot( GET_RECEIPT( row )->pivot() );
     receipt->setTemperature( GET_RECEIPT( row )->temperature() );
     receipt->setTint( GET_RECEIPT( row )->tint() );
     receipt->setClarity( GET_RECEIPT( row )->clarity() );
@@ -5824,6 +5848,14 @@ void MainWindow::on_horizontalSliderContrast_valueChanged(int position)
     m_frameChanged = true;
 }
 
+void MainWindow::on_horizontalSliderPivot_valueChanged(int position)
+{
+    double value = position / 100.0;
+    processingSetPivot( m_pProcessingObject, value);
+    ui->label_PivotVal->setText( QString("%1").arg( value, 0, 'f', 2 ) );
+    m_frameChanged = true;
+}
+
 void MainWindow::on_horizontalSliderContrastGradient_valueChanged(int position)
 {
     processingSetSimpleContrastGradient( m_pProcessingObject, position / 100.0 );
@@ -6219,6 +6251,13 @@ void MainWindow::on_horizontalSliderContrast_doubleClicked()
 {
     ReceiptSettings *sliders = new ReceiptSettings(); //default
     ui->horizontalSliderContrast->setValue( sliders->contrast() );
+    delete sliders;
+}
+
+void MainWindow::on_horizontalSliderPivot_doubleClicked()
+{
+    ReceiptSettings *sliders = new ReceiptSettings(); //default
+    ui->horizontalSliderPivot->setValue( sliders->pivot() );
     delete sliders;
 }
 
@@ -6876,6 +6915,7 @@ void MainWindow::enableCreativeAdjustments( bool enable )
     ui->horizontalSliderVibrance->setEnabled( enable );
     ui->horizontalSliderSaturation->setEnabled( enable );
     ui->horizontalSliderContrast->setEnabled( enable );
+    ui->horizontalSliderPivot->setEnabled( enable );
     ui->horizontalSliderClarity->setEnabled( enable );
     ui->horizontalSliderHighlights->setEnabled( enable );
     ui->horizontalSliderShadows->setEnabled( enable );
@@ -6888,6 +6928,7 @@ void MainWindow::enableCreativeAdjustments( bool enable )
     ui->label_VibranceVal->setEnabled( enable );
     ui->label_SaturationVal->setEnabled( enable );
     ui->label_ContrastVal->setEnabled( enable );
+    ui->label_PivotVal->setEnabled( enable );
     ui->label_ClarityVal->setEnabled( enable );
     ui->label_HighlightsVal->setEnabled( enable );
     ui->label_ShadowsVal->setEnabled( enable );
@@ -6900,6 +6941,7 @@ void MainWindow::enableCreativeAdjustments( bool enable )
     ui->label_vibrance->setEnabled( enable );
     ui->label_saturation->setEnabled( enable );
     ui->label_contrast->setEnabled( enable );
+    ui->label_pivot->setEnabled( enable );
     ui->label_clarity->setEnabled( enable );
     ui->label_highlights->setEnabled( enable );
     ui->label_shadows->setEnabled( enable );
@@ -7513,6 +7555,9 @@ void MainWindow::deleteFileFromSession( void )
     int delFile = QMessageBox::question( this, tr( "%1 - Remove clip" ).arg( APPNAME ), tr( "Remove clip from session, or delete clip from disk?" ), tr( "Remove" ), tr( "Delete from Disk" ), tr( "Abort" ) );
     if( delFile == 2 ) return; //Abort
 
+    //begin clip delete process
+    m_inClipDeleteProcess = true;
+
     //Save the current active row for selection after deletion
     int currentRow = m_pProxyModel->mapFromSource( m_pModel->index( SESSION_ACTIVE_CLIP_ROW, 0, QModelIndex() ) ).row();
 
@@ -7543,6 +7588,21 @@ void MainWindow::deleteFileFromSession( void )
             {
                 if( MoveToTrash( mappName ) ) QMessageBox::critical( this, tr( "%1 - Delete MAPP file from disk" ).arg( APPNAME ), tr( "Delete MAPP file failed!" ) );
             }
+            //M00..M99
+            mappName.chop( 1 );
+            for( int nr = 0; nr < 100; nr++ )
+            {
+                mappName.chop( 2 );
+                mappName.append( QString( "%1" ).arg( nr, 2, 10, QChar( '0' ) ) );
+                if( QFileInfo( mappName ).exists() )
+                {
+                    if( MoveToTrash( mappName ) ) QMessageBox::critical( this, tr( "%1 - Delete M%2 file from disk" ).arg( APPNAME ).arg( nr, 2, 10, QChar( '0' ) ), tr( "Delete M%1 file failed!" ).arg( nr, 2, 10, QChar( '0' ) ) );
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
         int delrow = m_pProxyModel->mapFromSource( m_pModel->index( row, 0, QModelIndex() ) ).row();
         //Remove item from Session List & Remove slider memory
@@ -7572,6 +7632,9 @@ void MainWindow::deleteFileFromSession( void )
         //All black
         deleteSession();
     }
+
+    //End clip delete process
+    m_inClipDeleteProcess = false;
 }
 
 //Shows the file, which is selected via contextmenu
@@ -7667,6 +7730,15 @@ void MainWindow::on_label_ContrastVal_doubleClicked()
     editSlider.autoSetup( ui->horizontalSliderContrast, ui->label_ContrastVal, 1.0, 0, 1.0 );
     editSlider.exec();
     ui->horizontalSliderContrast->setValue( editSlider.getValue() );
+}
+
+//DoubleClick on Pivot Label
+void MainWindow::on_label_PivotVal_doubleClicked()
+{
+    EditSliderValueDialog editSlider;
+    editSlider.autoSetup( ui->horizontalSliderPivot, ui->label_PivotVal, 0.01, 2, 100.0 );
+    editSlider.exec();
+    ui->horizontalSliderPivot->setValue( editSlider.getValue() );
 }
 
 //DoubleClick on Contrast Gradient Label
@@ -8499,6 +8571,13 @@ void MainWindow::on_toolButtonHueVsHueReset_clicked()
     ui->labelHueVsHue->paintElement();
 }
 
+//Reset HueVsHue curve with default points
+void MainWindow::on_toolButtonHueVsHueResetDefaultPoints_clicked()
+{
+    ui->labelHueVsHue->resetLineDefaultPoints();
+    ui->labelHueVsHue->paintElement();
+}
+
 //Reset HueVsSat curve
 void MainWindow::on_toolButtonHueVsSatReset_clicked()
 {
@@ -8506,10 +8585,24 @@ void MainWindow::on_toolButtonHueVsSatReset_clicked()
     ui->labelHueVsSat->paintElement();
 }
 
+//Reset HueVsSat curve with default points
+void MainWindow::on_toolButtonHueVsSatResetDefaultPoints_clicked()
+{
+    ui->labelHueVsSat->resetLineDefaultPoints();
+    ui->labelHueVsSat->paintElement();
+}
+
 //Reset HueVsLuma curve
 void MainWindow::on_toolButtonHueVsLumaReset_clicked()
 {
     ui->labelHueVsLuma->resetLine();
+    ui->labelHueVsLuma->paintElement();
+}
+
+//Reset HueVsLuma curve with default points
+void MainWindow::on_toolButtonHueVsLumaResetDefaultPoints_clicked()
+{
+    ui->labelHueVsLuma->resetLineDefaultPoints();
     ui->labelHueVsLuma->paintElement();
 }
 
