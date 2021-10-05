@@ -458,6 +458,8 @@ private:
     bool m_hdrExport;
     uint16_t m_whiteBalanceMethod;
     uint16_t m_matrixMethod;
+    uint16_t m_highlight_mode;
+    float m_headroom;
     bool m_exportAbortPressed;
     bool m_zoomTo100Center;
     bool m_zoomModeChanged;

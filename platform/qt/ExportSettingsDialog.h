@@ -131,7 +131,9 @@ public:
                                   uint8_t smooth = 0,
                                   bool hdrBlending = false,
                                   uint16_t whiteBalMeth = 2,
-                                  uint16_t matrixMeth = 0);
+                                  uint16_t matrixMeth = 0,
+								  uint16_t highlightMode = 1,
+								  float headroom = 4.0);
     ~ExportSettingsDialog();
     uint8_t encoderSetting(void);
     uint8_t encoderOption(void);
@@ -147,6 +149,8 @@ public:
     bool hdrBlending(void);
     uint16_t matrixMethod(void);
     uint16_t whiteBalanceMethod(void);
+    float headroom(void);
+    uint16_t highlightMode(void);
 
 private slots:
     void on_pushButtonClose_clicked();

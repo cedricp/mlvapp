@@ -152,83 +152,22 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="5" column="2">
-         <widget class="QComboBox" name="comboBoxIlluminant"/>
-        </item>
-        <item row="2" column="2">
-         <widget class="QComboBox" name="comboBoxDebayer">
-          <item>
-           <property name="text">
-            <string>Force Bilinear</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Force AMaZE</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Force LMMSE</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Force IGV</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Receipt configuration</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="labelWhiteBalance">
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_Info">
           <property name="text">
-           <string>White balance mode</string>
+           <string/>
+          </property>
+          <property name="scaledContents">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
-        <item row="3" column="2">
-         <widget class="QComboBox" name="comboBoxMatrixMode">
-          <item>
-           <property name="text">
-            <string>Use file metadata</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>User specified illuminant</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Image average</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Average grey box</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Use custom</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="labelMatrixMode">
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_5">
           <property name="text">
-           <string>Matrix mode</string>
+           <string>Headroom</string>
           </property>
          </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QComboBox" name="comboBoxOption"/>
         </item>
         <item row="0" column="0">
          <widget class="QLabel" name="label">
@@ -240,6 +179,34 @@
           </property>
           <property name="text">
            <string>Codec</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="labelIlluminant">
+          <property name="text">
+           <string>User defined illuminant</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Highlight mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="labelMatrixMode">
+          <property name="text">
+           <string>Matrix mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="labelDebayer">
+          <property name="text">
+           <string>Debayer</string>
           </property>
          </widget>
         </item>
@@ -372,27 +339,106 @@
           </item>
          </widget>
         </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="labelDebayer">
-          <property name="text">
-           <string>Debayer</string>
+        <item row="7" column="2">
+         <widget class="QComboBox" name="comboBoxCamera"/>
+        </item>
+        <item row="1" column="2">
+         <widget class="QComboBox" name="comboBoxOption"/>
+        </item>
+        <item row="8" column="2">
+         <widget class="QSpinBox" name="spinBoxHeadroom">
+          <property name="value">
+           <number>4</number>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_Info">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="scaledContents">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2">
-         <widget class="QComboBox" name="comboBoxWhiteBalance">
+        <item row="9" column="2">
+         <widget class="QComboBox" name="comboBoxHighlight">
           <property name="currentIndex">
-           <number>2</number>
+           <number>1</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>Clip</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Unclip</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Blend</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Rebuild</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Rebuild+</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Rebuild++</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="QComboBox" name="comboBoxDebayer">
+          <item>
+           <property name="text">
+            <string>Force Bilinear</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Force AMaZE</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Force LMMSE</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Force IGV</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Receipt configuration</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Supported cameras</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="labelWhiteBalance">
+          <property name="text">
+           <string>White balance mode</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="2">
+         <widget class="QComboBox" name="comboBoxIlluminant"/>
+        </item>
+        <item row="3" column="2">
+         <widget class="QComboBox" name="comboBoxMatrixMode">
+          <property name="currentIndex">
+           <number>1</number>
           </property>
           <item>
            <property name="text">
@@ -411,22 +457,34 @@
           </item>
          </widget>
         </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="labelIlluminant">
-          <property name="text">
-           <string>User defined illuminant</string>
-          </property>
+        <item row="4" column="2">
+         <widget class="QComboBox" name="comboBoxWhiteBalance">
+          <item>
+           <property name="text">
+            <string>Use file metadata</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>User specified illuminant</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Image average</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Average grey box</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Use custom</string>
+           </property>
+          </item>
          </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Supported cameras</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="2">
-         <widget class="QComboBox" name="comboBoxCamera"/>
         </item>
        </layout>
       </item>

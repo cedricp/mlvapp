@@ -84,7 +84,8 @@ bool exportPresetLessThan(const ExportPreset &v1, const ExportPreset &v2)
 ExportSettingsDialog::ExportSettingsDialog(QWidget *parent, Scripting *scripting, uint8_t currentCodecProfile,
                                            uint8_t currentCodecOption, uint8_t debayerMode, bool resize, uint16_t resizeWidth,
                                            uint16_t resizeHeight, bool fpsOverride, double fps, bool exportAudio, bool heightLocked,
-                                           uint8_t smooth, bool hdrBlending, uint16_t whiteBalMeth, uint16_t matrixMeth) :
+                                           uint8_t smooth, bool hdrBlending, uint16_t whiteBalMeth, uint16_t matrixMeth,uint16_t highlightMode,
+										   float headroom ) :
     QDialog(parent),
     ui(new Ui::ExportSettingsDialog)
 {
@@ -108,6 +109,8 @@ ExportSettingsDialog::ExportSettingsDialog(QWidget *parent, Scripting *scripting
     ui->checkBoxHdrBlending->setChecked( hdrBlending );
     ui->comboBoxWhiteBalance->setCurrentIndex( whiteBalMeth );
     ui->comboBoxMatrixMode->setCurrentIndex( matrixMeth );
+    ui->spinBoxHeadroom->setValue(headroom);
+    ui->comboBoxHighlight->setCurrentIndex(highlightMode);
 
     //Disable some options for AVFoundation
     if( ui->comboBoxOption->currentText() == QString( "Apple AVFoundation" ) )
@@ -234,6 +237,16 @@ uint16_t ExportSettingsDialog::matrixMethod()
 uint16_t ExportSettingsDialog::whiteBalanceMethod()
 {
    return ui->comboBoxWhiteBalance->currentIndex();
+}
+
+float ExportSettingsDialog::headroom(void)
+{
+	return (float)ui->spinBoxHeadroom->value();
+}
+
+uint16_t ExportSettingsDialog::highlightMode(void)
+{
+	return ui->comboBoxHighlight->currentIndex();
 }
 
 //Change option when codec changed

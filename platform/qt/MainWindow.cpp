@@ -108,6 +108,7 @@ MainWindow::MainWindow(int &argc, char **argv, QWidget *parent) :
     m_tryToSyncAudio = false;
     m_playbackStopped = false;
 
+
 #ifdef STDOUT_SILENT
     //QtNetwork: shut up please!
     QLoggingCategory::setFilterRules(QStringLiteral("qt.network.ssl=false"));
@@ -206,6 +207,11 @@ MainWindow::MainWindow(int &argc, char **argv, QWidget *parent) :
                          "Please find available options by "
                          "\"rawtoaces --valid-illum\".\n");
     }
+
+    m_matrixMethod = 1;
+    m_whiteBalanceMethod = 0;
+    m_headroom = 4;
+    m_highlight_mode = 1;
 }
 
 //Destructor
@@ -2728,13 +2734,14 @@ void MainWindow::startExportEXR(QString fileName)
     metadata.push_back( std::pair<std::string, std::string>("Iso", ACTIVE_CLIP->getElement( 11 ).toString().toStdString() ));
     metadata.push_back( std::pair<std::string, std::string>("Bit depth", ACTIVE_CLIP->getElement( 13 ).toString().toStdString() ));
     metadata.push_back( std::pair<std::string, std::string>("Date", ACTIVE_CLIP->getElement( 14 ).toString().toStdString() ));
+    metadata.push_back( std::pair<std::string, std::string>("Focal distance", QString("%1").arg( m_pMlvObject->LENS.focalDist ).toStdString() ));
 
     AcesRender& Aces_render = AcesRender::getInstance();
     Option& options = Aces_render.getSettings();
-    options.mat_method = (matMethods_t)1;//(matMethods_t)m_matrixMethod;
-    options.wb_method = (wbMethods_t)0;//(wbMethods_t)m_whiteBalanceMethod;
-    options.scale = 4.;
-    options.highlight = 3;
+    options.mat_method = (matMethods_t)m_matrixMethod;
+    options.wb_method = (wbMethods_t)m_whiteBalanceMethod;
+    options.scale = m_headroom;
+    options.highlight = m_highlight_mode;
 
     //Init DNG data struct
     dngObject_t * cinemaDng = initDngObject( m_pMlvObject, m_codecProfile - 6, getFramerate(), picAR);
@@ -7108,7 +7115,9 @@ void MainWindow::on_actionExportSettings_triggered()
                                                                       m_smoothFilterSetting,
                                                                       m_hdrExport,
                                                                       m_whiteBalanceMethod,
-                                                                      m_matrixMethod);
+                                                                      m_matrixMethod,
+																	  m_highlight_mode,
+																	  m_headroom);
     pExportSettings->exec();
     m_codecProfile = pExportSettings->encoderSetting();
     m_codecOption = pExportSettings->encoderOption();
@@ -7124,6 +7133,8 @@ void MainWindow::on_actionExportSettings_triggered()
     m_hdrExport = pExportSettings->hdrBlending();
     m_whiteBalanceMethod = pExportSettings->whiteBalanceMethod();
     m_matrixMethod = pExportSettings->matrixMethod();
+    m_highlight_mode = pExportSettings->highlightMode();
+    m_headroom = pExportSettings->headroom();
 
     delete pExportSettings;
 
